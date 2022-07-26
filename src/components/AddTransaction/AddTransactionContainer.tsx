@@ -1,15 +1,6 @@
-import {
-  Box,
-  Stack,
-  TextField,
-  MenuItem,
-  Select,
-  Button,
-  Avatar,
-  FormControl,
-  InputLabel,
-} from "@mui/material";
-import React, { useEffect, useState } from "react";
+import { ArrowDropDownRounded, ArrowDropUpRounded } from "@mui/icons-material";
+import { Box, Stack, TextField, MenuItem, Button, Menu } from "@mui/material";
+import { useState } from "react";
 
 type TransactionType = "INCOME" | "EXPENSE";
 type TransactionCategory = {
@@ -19,14 +10,14 @@ type TransactionCategory = {
   color: string;
 };
 
-const paletteColors = [
-  "#4BBEEA",
-  "#ba68c8",
-  "#ef5350",
-  "#ff9800",
-  "#4caf50",
-  "#35393E",
-];
+// const paletteColors = [
+//   "#4BBEEA",
+//   "#ba68c8",
+//   "#ef5350",
+//   "#ff9800",
+//   "#4caf50",
+//   "#35393E",
+// ];
 
 const AddTransactionContainer = () => {
   const [selectedType, setSelectedType] = useState<TransactionCategory>();
@@ -38,68 +29,85 @@ const AddTransactionContainer = () => {
     { id: "4", type: "EXPENSE", name: "transport", color: "#35393E" },
   ]);
 
-  useEffect(() => {
-    setSelectedType(undefined);
-  }, [txnType]);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement>();
 
   return (
-    <Box sx={{ borderRadius: 1, bgcolor: "#fff", p: 1 }}>
-      <Stack direction="row">
-        {/* <TextField value={selectedType?.name || ""} /> */}
-        <FormControl fullWidth>
-          <InputLabel id="select-type-label">ประเภท</InputLabel>
-          <Select
-            label="ประเภท"
-            value={selectedType?.id || ""}
-            renderValue={() => {
-              if (selectedType) {
-                return <span>{selectedType.name}</span>;
-              }
-            }}
-            onChange={(evt) =>
-              setSelectedType(typeList.find((t) => t.id === evt.target.value))
-            }
-          >
-            <Stack direction="row" spacing={1} p={1}>
-              <Button
-                variant={txnType === "EXPENSE" ? "contained" : "text"}
-                color="error"
-                onClick={() => setTxnType("EXPENSE")}
-                fullWidth
-              >
-                รายจ่าย
-              </Button>
-              <Button
-                variant={txnType === "INCOME" ? "contained" : "text"}
-                color="success"
-                onClick={() => setTxnType("INCOME")}
-                fullWidth
-              >
-                รายรับ
-              </Button>
-            </Stack>
-            <MenuItem value="" disabled>
-              เลือกประเภท
-            </MenuItem>
-            {typeList
-              .filter((t) => t.type === txnType)
-              .map((t) => (
-                <MenuItem key={t.id} value={t.id}>
-                  <Box
-                    sx={{
-                      height: "24px",
-                      width: "24px",
-                      bgcolor: t.color,
-                      mr: 1,
-                      borderRadius: "100%",
-                    }}
-                  />
-                  {t.name}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
+    <Box sx={{ borderRadius: 1, bgcolor: "#fff", p: 2 }}>
+      <Stack direction="row" spacing={2}>
+        <TextField
+          label="ประเภท"
+          value={selectedType?.name || ""}
+          onClick={(e) => {
+            setAnchorEl(e.currentTarget);
+          }}
+          InputProps={{
+            readOnly: true,
+            endAdornment: anchorEl ? (
+              <ArrowDropUpRounded />
+            ) : (
+              <ArrowDropDownRounded />
+            ),
+          }}
+        />
+        <TextField label="รายละเอียด" />
+        <TextField label="tag" />
+        <TextField label="จำนวนเงิน" />
       </Stack>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(undefined)}
+        PaperProps={{
+          sx: {
+            minWidth: "280px",
+          },
+        }}
+      >
+        <Stack direction="row" spacing={1} p={1}>
+          <Button
+            variant={txnType === "EXPENSE" ? "contained" : "text"}
+            color="error"
+            onClick={() => setTxnType("EXPENSE")}
+            fullWidth
+          >
+            รายจ่าย
+          </Button>
+          <Button
+            variant={txnType === "INCOME" ? "contained" : "text"}
+            color="success"
+            onClick={() => setTxnType("INCOME")}
+            fullWidth
+          >
+            รายรับ
+          </Button>
+        </Stack>
+        <MenuItem value="" disabled>
+          เลือกประเภท
+        </MenuItem>
+        {typeList
+          .filter((t) => t.type === txnType)
+          .map((t) => (
+            <MenuItem
+              key={t.id}
+              value={t.id}
+              onClick={() => {
+                setSelectedType(t);
+                setAnchorEl(undefined);
+              }}
+            >
+              <Box
+                sx={{
+                  height: "24px",
+                  width: "24px",
+                  bgcolor: t.color,
+                  mr: 1,
+                  borderRadius: "100%",
+                }}
+              />
+              {t.name}
+            </MenuItem>
+          ))}
+      </Menu>
     </Box>
   );
 };
