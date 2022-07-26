@@ -1,21 +1,14 @@
 import {
   AppBar,
-  Avatar,
-  Box,
-  Button,
-  IconButton,
+  Container,
   Toolbar,
+  Box,
   Typography,
+  IconButton,
+  Avatar,
 } from "@mui/material";
 
-import "./App.css";
-import "@fontsource/roboto/300.css";
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/500.css";
-import "@fontsource/roboto/700.css";
-import { Container } from "@mui/system";
-
-function App() {
+const Header = () => {
   return (
     <AppBar position="static">
       <Container disableGutters>
@@ -39,7 +32,7 @@ function App() {
           >
             INTEL EVO - PIGGY BANK
           </Typography>
-          <Box sx={{ flexGrow: 1 }}></Box>
+          <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ flexGrow: 0 }}>
             <IconButton sx={{ p: 0 }}>
               <Avatar
@@ -52,6 +45,6 @@ function App() {
       </Container>
     </AppBar>
   );
-}
+};
 
-export default App;
+export default Header;
