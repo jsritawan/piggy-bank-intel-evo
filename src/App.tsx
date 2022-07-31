@@ -1,8 +1,3 @@
-import "@fontsource/roboto/300.css";
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/500.css";
-import "@fontsource/roboto/700.css";
-
 import { Container } from "@mui/system";
 import { Box, Button, Collapse, Stack } from "@mui/material";
 
@@ -18,7 +13,7 @@ function App() {
     <Box sx={{ bgcolor: grey[100], height: "100%" }}>
       <Header />
       <Container maxWidth="md" sx={{ mt: 5 }}>
-        <Stack spacing={1}>
+        <Stack spacing={2}>
           <Box
             sx={{
               display: "flex",

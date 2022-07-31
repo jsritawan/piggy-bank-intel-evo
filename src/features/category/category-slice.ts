@@ -23,6 +23,12 @@ const initialState: Category[] = [
   { id: "3", type: 2, name: "food", color: "#ef5350" },
   { id: "4", type: 2, name: "transport", color: "#35393E" },
   { id: "5", type: 2, name: "credit card", color: "#ef5350" },
+  {
+    id: "6",
+    type: 2,
+    name: "Lorem ipsum dolor sit amet consectetur, adipisicing elit. Magnam, architecto! Enim dolores quas recusandae dolorum aliquid, culpa distinctio esse, debitis, eius commodi perspiciatis! Minima fuga voluptate vero officiis blanditiis iusto.",
+    color: "#ef5350",
+  },
 ];
 
 const categorySlice = createSlice({

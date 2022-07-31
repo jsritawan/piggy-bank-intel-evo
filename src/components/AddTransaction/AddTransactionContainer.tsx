@@ -8,19 +8,25 @@ import {
   Menu,
   Typography,
   Grid,
+  InputAdornment,
+  Fade,
+  Tooltip,
 } from "@mui/material";
 import { useFormik } from "formik";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useAppSelector } from "../../app/hooks";
 import { Category, CategoryType } from "../../features/category/category-slice";
-import { Transaction } from "../../features/transactions/transactions-slice";
 import * as yup from "yup";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { add, sub } from "date-fns";
+import { th } from "date-fns/locale";
 
 const validationSchema = yup.object().shape({
   category: yup.object().required(),
   note: yup.string(),
   labels: yup.array().of(yup.string()),
-  amount: yup.number().required(),
+  amount: yup.number().required().positive().moreThan(0),
 });
 
 interface TransactionForm {
@@ -36,20 +42,11 @@ const AddTransactionContainer: React.FC<{
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }> = ({ setOpen }) => {
   const categories = useAppSelector((state) => state.categories);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>();
   const [txnType, setTxnType] = useState<CategoryType>(2);
   const [anchorEl, setAnchorEl] = useState<HTMLElement>();
-
-  const selectedType = useMemo(
-    () => categories.find((c) => c.id === selectedCategoryId),
-    [categories, selectedCategoryId]
-  );
+  const [openCalendar, setOpenCalendar] = useState(false);
 
   const initialValues: Partial<TransactionForm> = {
-    date: undefined,
-    category: undefined,
-    note: "",
-    labels: [],
     amount: 0,
   };
 
@@ -63,131 +60,189 @@ const AddTransactionContainer: React.FC<{
 
   return (
     <Box sx={{ borderRadius: 1, bgcolor: "#fff", p: 2 }}>
-      <form onSubmit={formik.handleSubmit}>
-        <Box sx={{ flexGrow: 1 }}>
-          <Grid container spacing={1} columns={2} sx={{ m: 0 }}>
-            <Grid md={1} xs={2}>
-              <Box>
-                <input />
-              </Box>
-            </Grid>
-            <Grid md={1} xs={2}>
-              <input />
-            </Grid>
-            <Grid md={1} xs={2}>
-              <input />
-            </Grid>
-            <Grid md={1} xs={2}>
-              <input />
-            </Grid>
-            <Grid xs={2}>
-              <Box
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "end",
-                  mt: 1,
+      <form onSubmit={formik.handleSubmit} autoComplete="off">
+        <Grid container spacing={2}>
+          <Grid item md={4} xs={12}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              วันที่
+            </Typography>
+            <LocalizationProvider
+              dateAdapter={AdapterDateFns}
+              adapterLocale={th}
+            >
+              <DatePicker
+                {...formik.getFieldProps("date")}
+                open={openCalendar}
+                onOpen={() => setOpenCalendar(true)}
+                onClose={() => setOpenCalendar(false)}
+                onChange={(value) => {
+                  formik.setFieldValue("date", value);
                 }}
-              >
-                <Button type="submit" variant="contained">
-                  บันทึก
-                </Button>
-              </Box>
-            </Grid>
+                views={["year", "month", "day"]}
+                inputFormat="dd/MM/yyyy"
+                minDate={sub(new Date(), { years: 5 })}
+                maxDate={add(new Date(), { years: 5 })}
+                componentsProps={{
+                  actionBar: {
+                    actions: ["today"],
+                  },
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    onClick={() => setOpenCalendar(true)}
+                    fullWidth
+                    error={formik.touched["date"] && !!formik.errors["date"]}
+                    helperText={formik.touched["date"] && formik.errors["date"]}
+                  />
+                )}
+              />
+            </LocalizationProvider>
           </Grid>
-        </Box>
-
-        {/* <Stack direction="row" spacing={2}>
-          <TextField
-            label="ประเภท"
-            value={selectedType?.name || ""}
-            onClick={(e) => {
-              setAnchorEl(e.currentTarget);
-            }}
-            InputProps={{
-              readOnly: true,
-              endAdornment: anchorEl ? (
-                <ArrowDropUpRounded />
-              ) : (
-                <ArrowDropDownRounded />
-              ),
-            }}
-          />
-          <TextField label="รายละเอียด" />
-          <TextField label="label" />
-          <Stack spacing={1}>
-            <Typography component="label">จำนวนเงิน</Typography>
+          <Grid item md={4} xs={12}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              หมวดหมู่
+            </Typography>
             <TextField
-              {...formik.getFieldProps("amount")}
-              placeholder="จำนวนเงิน"
-              error={formik.touched["amount"] && !!formik.errors["amount"]}
+              {...formik.getFieldProps("category")}
+              value={formik.values.category?.name || ""}
+              onClick={(e) => {
+                setAnchorEl(e.currentTarget);
+              }}
+              InputProps={{
+                readOnly: true,
+                startAdornment: formik.values.category && (
+                  <InputAdornment position="start">
+                    <Box
+                      sx={{
+                        height: "16px",
+                        width: "16px",
+                        borderRadius: "100%",
+                        bgcolor: formik.values.category.color,
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Fade key={+Boolean(anchorEl)} in>
+                      {anchorEl ? (
+                        <ArrowDropUpRounded />
+                      ) : (
+                        <ArrowDropDownRounded />
+                      )}
+                    </Fade>
+                  </InputAdornment>
+                ),
+              }}
+              error={formik.touched["category"] && !!formik.errors["category"]}
+              helperText={
+                formik.touched["category"] && formik.errors["category"]
+              }
+              fullWidth
             />
-          </Stack>
-        </Stack>
-        <Box
-          sx={{ width: "100%", display: "flex", justifyContent: "end", mt: 1 }}
-        >
-          <Button type="submit" variant="contained">
-            บันทึก
-          </Button>
-        </Box> */}
-      </form>
-
-      {/* <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(undefined)}
-        PaperProps={{
-          sx: {
-            minWidth: "280px",
-          },
-        }}
-      >
-        <Stack direction="row" spacing={1} p={1}>
-          <Button
-            variant={txnType === 2 ? "contained" : "text"}
-            color="error"
-            onClick={() => setTxnType(2)}
-            fullWidth
-          >
-            รายจ่าย
-          </Button>
-          <Button
-            variant={txnType === 1 ? "contained" : "text"}
-            color="success"
-            onClick={() => setTxnType(1)}
-            fullWidth
-          >
-            รายรับ
-          </Button>
-        </Stack>
-        <MenuItem value="" disabled>
-          เลือกประเภท
-        </MenuItem>
-        {categories
-          .filter((cat) => cat.type === txnType)
-          .map((cat) => (
-            <MenuItem
-              key={cat.id}
-              value={cat.id}
-              onClick={() => {
-                setSelectedCategoryId(cat.id);
-                setAnchorEl(undefined);
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={() => setAnchorEl(undefined)}
+              PaperProps={{
+                sx: {
+                  minWidth: "280px",
+                  maxWidth: "300px",
+                },
               }}
             >
-              <Box
-                sx={{
-                  height: "24px",
-                  width: "24px",
-                  bgcolor: cat.color,
-                  mr: 1,
-                  borderRadius: "100%",
-                }}
-              />
-              {cat.name}
-            </MenuItem>
-          ))}
-      </Menu> */}
+              <Stack direction="row" spacing={1} p={1}>
+                <Button
+                  variant={txnType === 2 ? "contained" : "text"}
+                  color="error"
+                  onClick={() => setTxnType(2)}
+                  fullWidth
+                >
+                  รายจ่าย
+                </Button>
+                <Button
+                  variant={txnType === 1 ? "contained" : "text"}
+                  color="success"
+                  onClick={() => setTxnType(1)}
+                  fullWidth
+                >
+                  รายรับ
+                </Button>
+              </Stack>
+              <MenuItem value="" disabled>
+                เลือกประเภท
+              </MenuItem>
+              {categories
+                .filter((cat) => cat.type === txnType)
+                .map((cat) => (
+                  <MenuItem
+                    key={cat.id}
+                    value={cat.id}
+                    onClick={() => {
+                      formik.setFieldValue("category", cat);
+                      setAnchorEl(undefined);
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      width="100%"
+                      overflow="hidden"
+                    >
+                      <Box
+                        sx={{
+                          height: "24px",
+                          width: "24px",
+                          flex: "0 0 24px",
+                          bgcolor: cat.color,
+                          borderRadius: "100%",
+                        }}
+                      />
+                      <Tooltip title={cat.name}>
+                        <Typography
+                          variant="body1"
+                          noWrap
+                          textOverflow="ellipsis"
+                        >
+                          {cat.name}
+                        </Typography>
+                      </Tooltip>
+                    </Stack>
+                  </MenuItem>
+                ))}
+            </Menu>
+          </Grid>
+          <Grid item md={4} xs={12}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              จำนวนเงิน
+            </Typography>
+            <TextField
+              {...formik.getFieldProps("amount")}
+              error={formik.touched["amount"] && !!formik.errors["amount"]}
+              helperText={formik.touched["amount"] && formik.errors["amount"]}
+              fullWidth
+            />
+          </Grid>
+          <Grid item md={8} xs={12}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              รายละเอียด (optional)
+            </Typography>
+            <TextField fullWidth />
+          </Grid>
+          <Grid item md={4} xs={12}>
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              ป้ายกำกับ (optional)
+            </Typography>
+            <TextField fullWidth />
+          </Grid>
+          <Grid item xs={12} textAlign="right">
+            <Button type="submit" variant="contained" color="success">
+              บันทึก
+            </Button>
+          </Grid>
+        </Grid>
+      </form>
     </Box>
   );
 };
