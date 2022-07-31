@@ -32,7 +32,7 @@ function App() {
             </Button>
           </Box>
           <Collapse in={open}>
-            <AddTransactionContainer />
+            <AddTransactionContainer setOpen={setOpen} />
           </Collapse>
         </Stack>
       </Container>
