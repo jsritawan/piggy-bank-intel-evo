@@ -1,4 +1,3 @@
-import "./App.css";
 import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
@@ -7,11 +6,11 @@ import "@fontsource/roboto/700.css";
 import { Container } from "@mui/system";
 import { Box, Button, Collapse, Stack } from "@mui/material";
 
-import Header from "../Header/Header";
 import { grey } from "@mui/material/colors";
-import PeriodContainer from "../Period/PeriodContainer";
 import { useState } from "react";
-import AddTransactionContainer from "../AddTransaction/AddTransactionContainer";
+import Header from "./components/Header/Header";
+import PeriodContainer from "./components/Period/PeriodContainer";
+import AddTransactionContainer from "./components/AddTransaction/AddTransactionContainer";
 
 function App() {
   const [open, setOpen] = useState(true);
