@@ -61,7 +61,7 @@ function App() {
           <>
             <Grid container spacing={4}>
               {wallets.map((w) => (
-                <Grid item key={w.id} md={3} xs={6}>
+                <Grid item key={w.id} md={4} xs={6}>
                   <ButtonBase
                     sx={{ p: 0, width: "100%" }}
                     onClick={() => handleSelectWallet(w.id)}
@@ -92,7 +92,7 @@ function App() {
                   </ButtonBase>
                 </Grid>
               ))}
-              <Grid item md={3} xs={6}>
+              <Grid item md={4} xs={6}>
                 <Button
                   variant="contained"
                   onClick={() => setOpenAddWalletDialog(true)}
