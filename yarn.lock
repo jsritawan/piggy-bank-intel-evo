@@ -1699,6 +1699,11 @@
   resolved "https://registry.yarnpkg.com/@firebase/webchannel-wrapper/-/webchannel-wrapper-0.6.2.tgz#6d05fa126104c9907573364dc04147b89b530e15"
   integrity sha512-zThUKcqIU6utWzM93uEvhlh8qj8A5LMPFJPvk/ODb+8GSSif19xM2Lw1M2ijyBy8+6skSkQBbavPzOU5Oh/8tQ==
 
+"@fontsource/kanit@^4.5.8":
+  version "4.5.8"
+  resolved "https://registry.yarnpkg.com/@fontsource/kanit/-/kanit-4.5.8.tgz#bb53ccfcd1b858ba165119e25a60aefa6a098332"
+  integrity sha512-Ko4lzzqyesaDAlHY+9EJdAdiFFHwtgarCjBlxI8hMyng/hI9CwAVoOjl6oVgwiFJh4+6fMoUM9+f8x4io5KcdA==
+
 "@fontsource/roboto@^4.5.7":
   version "4.5.7"
   resolved "https://registry.yarnpkg.com/@fontsource/roboto/-/roboto-4.5.7.tgz#292740a52fa2bac61b89f92e1c588037defe65cb"

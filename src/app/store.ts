@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import categorySlice from "../features/category/category-slice";
+import dialogSlice from "../features/dialog/dialog-slice";
 import txnSlice from "../features/transactions/transactions-slice";
 import walletsSlice from "../features/wallets/wallets-slice";
 
@@ -8,6 +9,7 @@ export const store = configureStore({
     transactions: txnSlice,
     categories: categorySlice,
     walletState: walletsSlice,
+    dialog: dialogSlice,
   },
 });
 

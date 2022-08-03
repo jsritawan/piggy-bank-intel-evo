@@ -23,6 +23,9 @@ const walletsSlice = createSlice({
   reducers: {
     addWallet: function (state, action: PayloadAction<IWallet>) {
       state.wallets.push(action.payload);
+      if (!state.selectedWallet) {
+        state.selectedWallet = action.payload;
+      }
     },
     selectWallet: function (state, action: PayloadAction<string>) {
       const { wallets } = state;

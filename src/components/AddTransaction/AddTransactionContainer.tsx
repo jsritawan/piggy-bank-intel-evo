@@ -237,7 +237,7 @@ const AddTransactionContainer: React.FC<{
             <TextField fullWidth />
           </Grid>
           <Grid item xs={12} textAlign="right">
-            <Button type="submit" variant="contained" color="success">
+            <Button type="submit" variant="contained">
               บันทึก
             </Button>
           </Grid>
