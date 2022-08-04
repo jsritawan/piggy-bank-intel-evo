@@ -1,5 +1,4 @@
 import {
-  AccountBalance,
   AccountBalanceWallet,
   ArrowDropDown,
   ArrowDropUp,
@@ -13,7 +12,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
 import { selectWallet } from "../../features/wallets/wallets-slice";
@@ -32,34 +31,42 @@ const WalletContainer = () => {
     setListWallet(false);
   };
 
+  useEffect(() => {
+    if (!selectedWallet && wallets.length > 0) {
+      dispatch(selectWallet(wallets[0].id));
+    }
+  }, [selectedWallet, wallets, dispatch]);
+
   return (
     <Stack spacing={2}>
       <Stack
         direction={"row"}
-        justifyContent={"space-between"}
+        justifyContent={selectedWallet ? "space-between" : "end"}
         alignItems={"center"}
       >
-        <Button
-          variant="text"
-          onClick={() => setListWallet(!listWallet)}
-          sx={{
-            textTransform: "none",
-            maxWidth: "260px",
-            bgcolor: "#fff",
-          }}
-        >
-          <AccountBalanceWallet
+        {selectedWallet && (
+          <Button
+            variant="text"
+            onClick={() => setListWallet(!listWallet)}
             sx={{
-              color: "gray",
+              textTransform: "none",
+              maxWidth: "260px",
+              bgcolor: "#fff",
             }}
-          />
+          >
+            <AccountBalanceWallet
+              sx={{
+                color: "gray",
+              }}
+            />
 
-          <Typography variant="body1" textOverflow={"ellipsis"} noWrap mx={1}>
-            {selectedWallet?.name}
-          </Typography>
+            <Typography variant="body1" textOverflow={"ellipsis"} noWrap mx={1}>
+              {selectedWallet.name}
+            </Typography>
 
-          {listWallet ? <ArrowDropUp /> : <ArrowDropDown />}
-        </Button>
+            {listWallet ? <ArrowDropUp /> : <ArrowDropDown />}
+          </Button>
+        )}
 
         {wallets.length < 6 && (
           <Button

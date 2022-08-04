@@ -11,9 +11,11 @@ import {
   InputAdornment,
   Fade,
   Tooltip,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { useFormik } from "formik";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useAppSelector } from "../../app/hooks";
 import { Category, CategoryType } from "../../features/category/category-slice";
 import * as yup from "yup";
@@ -45,6 +47,11 @@ const AddTransactionContainer: React.FC<{
   const [txnType, setTxnType] = useState<CategoryType>(2);
   const [anchorEl, setAnchorEl] = useState<HTMLElement>();
   const [openCalendar, setOpenCalendar] = useState(false);
+  const [preventOnClose, setPreventOnClose] = useState(false);
+
+  const roundAmount = useCallback((num: number) => {
+    return Number((Math.round(num * 100) / 100).toFixed(2));
+  }, []);
 
   const initialValues: Partial<TransactionForm> = {
     amount: 0,
@@ -54,7 +61,9 @@ const AddTransactionContainer: React.FC<{
     initialValues,
     validationSchema,
     onSubmit: () => {
-      setOpen(false);
+      if (!preventOnClose) {
+        setOpen(false);
+      }
     },
   });
 
@@ -221,6 +230,12 @@ const AddTransactionContainer: React.FC<{
               {...formik.getFieldProps("amount")}
               error={formik.touched["amount"] && !!formik.errors["amount"]}
               helperText={formik.touched["amount"] && formik.errors["amount"]}
+              onBlur={() =>
+                formik.setFieldValue(
+                  "amount",
+                  roundAmount(formik.values.amount || 0)
+                )
+              }
               fullWidth
             />
           </Grid>
@@ -236,8 +251,22 @@ const AddTransactionContainer: React.FC<{
             </Typography>
             <TextField fullWidth />
           </Grid>
-          <Grid item xs={12} textAlign="right">
-            <Button type="submit" variant="contained">
+          <Grid item xs={6}>
+            <FormControlLabel
+              label="เปิดป๊อปอัพไว้หลังเพิ่มธุรกรรม"
+              control={
+                <Checkbox
+                  color="success"
+                  onChange={(e) => setPreventOnClose(e.target.checked)}
+                />
+              }
+            />
+          </Grid>
+          <Grid item xs={6} textAlign="right">
+            <Button variant="text" onClick={() => setOpen(false)}>
+              ยกเลิก
+            </Button>
+            <Button type="submit" variant="contained" sx={{ ml: 2 }}>
               บันทึก
             </Button>
           </Grid>

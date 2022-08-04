@@ -14,7 +14,15 @@ export interface IWalletState {
   wallets: IWallet[];
 }
 const initialState: IWalletState = {
-  wallets: [],
+  wallets: [
+    {
+      id: "Thu Aug 04 2022 16:40:26 GMT+0700 (Indochina Time)",
+      userId: "userId",
+      name: "Init Cash Wallet",
+      balance: 0,
+      createAt: "Thu Aug 04 2022 16:40:26 GMT+0700 (Indochina Time)",
+    },
+  ],
 };
 
 const walletsSlice = createSlice({

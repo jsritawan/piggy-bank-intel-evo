@@ -14,6 +14,7 @@ import PeriodContainer from "./Period/PeriodContainer";
 import { WalletContainer } from "./Wallet";
 import { toggleDialog } from "../features/dialog/dialog-slice";
 import DialogCreateWallet from "./Dialog/DialogCreateWallet";
+import TransactionContainer from "./Transaction/TransactionContainer";
 
 const AppContainer = () => {
   const { selectedWallet, wallets } = useAppSelector(
@@ -68,6 +69,9 @@ const AppContainer = () => {
                 </Button>
               </Box>
             </Stack>
+
+            <TransactionContainer />
+
             <Dialog
               open={open}
               onClose={() => {
