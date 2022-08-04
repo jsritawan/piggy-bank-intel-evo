@@ -16,7 +16,7 @@ import { useFormik } from "formik";
 import { useCallback } from "react";
 
 const validationSchema = yup.object().shape({
-  name: yup.string().required(),
+  name: yup.string().max(100).required(),
   balance: yup.number().min(0).required(),
 });
 

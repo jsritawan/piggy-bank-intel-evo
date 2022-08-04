@@ -1,4 +1,9 @@
-import { ArrowDropDown, ArrowDropUp } from "@mui/icons-material";
+import {
+  AccountBalance,
+  AccountBalanceWallet,
+  ArrowDropDown,
+  ArrowDropUp,
+} from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -23,6 +28,8 @@ const WalletContainer = () => {
 
   const handleSelectWallet = (walletId: string) => {
     dispatch(selectWallet(walletId));
+
+    setListWallet(false);
   };
 
   return (
@@ -33,14 +40,25 @@ const WalletContainer = () => {
         alignItems={"center"}
       >
         <Button
-          variant="outlined"
+          variant="text"
           onClick={() => setListWallet(!listWallet)}
-          endIcon={listWallet ? <ArrowDropUp /> : <ArrowDropDown />}
           sx={{
             textTransform: "none",
+            maxWidth: "260px",
+            bgcolor: "#fff",
           }}
         >
-          {selectedWallet?.name}
+          <AccountBalanceWallet
+            sx={{
+              color: "gray",
+            }}
+          />
+
+          <Typography variant="body1" textOverflow={"ellipsis"} noWrap mx={1}>
+            {selectedWallet?.name}
+          </Typography>
+
+          {listWallet ? <ArrowDropUp /> : <ArrowDropDown />}
         </Button>
 
         {wallets.length < 6 && (
@@ -53,32 +71,40 @@ const WalletContainer = () => {
         )}
       </Stack>
 
-      {listWallet && (
+      <Fade unmountOnExit in={listWallet}>
         <Box>
           <Grid container spacing={4}>
             {wallets.map((w) => (
               <Fade key={w.id} in>
                 <Grid item md={4} xs={6}>
                   <ButtonBase
-                    sx={{ p: 0, width: "100%" }}
+                    sx={{
+                      p: 0,
+                      width: "100%",
+                      borderRadius: 1,
+                      overflow: "clip",
+                    }}
                     onClick={() => handleSelectWallet(w.id)}
                   >
                     <Stack
                       sx={{
-                        borderRadius: 1,
                         bgcolor: "#fff",
                         p: 2,
                         width: "100%",
                         textAlign: "left",
                       }}
                     >
-                      <Typography variant="h5">{w.name}</Typography>
+                      <Typography variant="h5" textOverflow={"ellipsis"} noWrap>
+                        {w.name}
+                      </Typography>
                       <Typography variant="caption" color="grey">
-                        Balance
+                        balance
                       </Typography>
                       <Typography
                         variant="h4"
                         color={w.balance >= 0 ? "#4BBEEA" : "error"}
+                        textOverflow={"ellipsis"}
+                        noWrap
                       >
                         {w.balance.toFixed(2)}
                       </Typography>
@@ -89,7 +115,7 @@ const WalletContainer = () => {
             ))}
           </Grid>
         </Box>
-      )}
+      </Fade>
     </Stack>
   );
 };

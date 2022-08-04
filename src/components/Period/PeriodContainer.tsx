@@ -1,20 +1,16 @@
 import { ChevronLeftRounded, ChevronRightRounded } from "@mui/icons-material";
-import {
-  Stack,
-  ButtonBase,
-  Box,
-  Typography,
-  Button,
-  Fade,
-} from "@mui/material";
+import { Stack, ButtonBase, Typography, Button, Fade } from "@mui/material";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { add, endOfMonth, format, startOfMonth, sub } from "date-fns";
 import { isSameMonth } from "date-fns/esm";
 import { th } from "date-fns/locale";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const PeriodContainer = () => {
   const [period, setPeriod] = useState<string>("");
   const [date, setDate] = useState<Date>(new Date());
+  const [openDatePicker, setOpenDatePicker] = useState(false);
 
   useEffect(() => {
     const startOf = startOfMonth(date);
@@ -48,19 +44,36 @@ const PeriodContainer = () => {
         <ChevronLeftRounded />
       </ButtonBase>
 
-      <Box
-        sx={{
-          p: 1,
-          height: "40px",
-          bgcolor: "#fff",
-          borderRadius: 1,
-          minWidth: "300px",
-        }}
-      >
-        <Fade key={date.toString()} in>
-          <Typography textAlign="center">{period}</Typography>
-        </Fade>
-      </Box>
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={th}>
+        <DatePicker
+          open={openDatePicker}
+          onClose={() => setOpenDatePicker(false)}
+          views={["year", "month", "day"]}
+          value={date}
+          onChange={(value) => {
+            if (value) {
+              setDate(value);
+            }
+          }}
+          renderInput={({ inputRef }) => (
+            <ButtonBase
+              ref={inputRef}
+              sx={{
+                p: 1,
+                height: "40px",
+                bgcolor: "#fff",
+                borderRadius: 1,
+                minWidth: "300px",
+              }}
+              onClick={() => setOpenDatePicker(!openDatePicker)}
+            >
+              <Fade key={date.toString()} in>
+                <Typography textAlign="center">{period}</Typography>
+              </Fade>
+            </ButtonBase>
+          )}
+        />
+      </LocalizationProvider>
 
       <ButtonBase
         sx={{
