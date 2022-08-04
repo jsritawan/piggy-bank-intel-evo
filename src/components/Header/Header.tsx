@@ -9,7 +9,7 @@ import {
 
 const Header = () => {
   return (
-    <AppBar position="static">
+    <AppBar position="sticky">
       <Toolbar>
         <Box
           sx={{

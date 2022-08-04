@@ -38,6 +38,7 @@ const PeriodContainer = () => {
           minWidth: 0,
           borderRadius: 1,
           bgcolor: "#fff",
+          boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
         }}
         onClick={prev}
       >
@@ -63,6 +64,7 @@ const PeriodContainer = () => {
                 height: "40px",
                 bgcolor: "#fff",
                 borderRadius: 1,
+                boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
                 minWidth: "300px",
               }}
               onClick={() => setOpenDatePicker(!openDatePicker)}
@@ -82,6 +84,7 @@ const PeriodContainer = () => {
           minWidth: 0,
           borderRadius: 1,
           bgcolor: "#fff",
+          boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
         }}
         onClick={next}
       >

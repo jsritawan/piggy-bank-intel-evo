@@ -68,7 +68,7 @@ const AddTransactionContainer: React.FC<{
   });
 
   return (
-    <Box sx={{ borderRadius: 1, bgcolor: "#fff", p: 2 }}>
+    <Box sx={{ borderRadius: 1, bgcolor: "#fff" }}>
       <form onSubmit={formik.handleSubmit} autoComplete="off">
         <Grid container spacing={2}>
           <Grid item md={4} xs={12}>

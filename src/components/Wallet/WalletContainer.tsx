@@ -52,6 +52,7 @@ const WalletContainer = () => {
               textTransform: "none",
               maxWidth: "260px",
               bgcolor: "#fff",
+              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
             }}
           >
             <AccountBalanceWallet
@@ -90,6 +91,7 @@ const WalletContainer = () => {
                       width: "100%",
                       borderRadius: 1,
                       overflow: "clip",
+                      boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
                     }}
                     onClick={() => handleSelectWallet(w.id)}
                   >

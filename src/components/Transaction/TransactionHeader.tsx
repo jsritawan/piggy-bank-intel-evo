@@ -9,7 +9,13 @@ const BalanceCard: React.FC<{ title: string; balance: number }> = ({
 }) => {
   return (
     <Stack
-      sx={{ bgcolor: "#fff", p: 2, width: "100%", borderRadius: 1 }}
+      sx={{
+        bgcolor: "#fff",
+        p: 2,
+        width: "100%",
+        borderRadius: 1,
+        boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
+      }}
       spacing={1}
     >
       <Typography variant="body1" textOverflow={"ellipsis"} noWrap>
@@ -36,7 +42,7 @@ const TransactionHeader = () => {
     <Fade in={!!wallet} unmountOnExit>
       <Box mt={2}>
         {wallet && (
-          <Grid container spacing={1}>
+          <Grid container spacing={2}>
             <Grid md={3} xs={6} item>
               <BalanceCard title="จำนวนเงินทั้งหมด" balance={wallet.balance} />
             </Grid>

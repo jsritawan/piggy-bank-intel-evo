@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Stack,
@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   Typography,
+  DialogTitle,
 } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import AddTransactionContainer from "./AddTransaction/AddTransactionContainer";
@@ -30,7 +31,7 @@ const AppContainer = () => {
   }, [wallets, dispatch]);
 
   return (
-    <Container maxWidth="md" sx={{ mt: 5 }}>
+    <Container maxWidth="md" sx={{ mt: "40px" }}>
       <Stack>
         {wallets.length === 0 && (
           <Stack spacing={2}>
@@ -78,6 +79,7 @@ const AppContainer = () => {
                 setOpen(false);
               }}
             >
+              <DialogTitle>เพิ่มธรุกรรม</DialogTitle>
               <DialogContent>
                 <AddTransactionContainer setOpen={setOpen} />
               </DialogContent>
