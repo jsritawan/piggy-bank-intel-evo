@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import authSlice from "../features/auth/auth-slice";
 import categorySlice from "../features/category/category-slice";
 import dialogSlice from "../features/dialog/dialog-slice";
 import txnSlice from "../features/transactions/transactions-slice";
@@ -10,6 +11,7 @@ export const store = configureStore({
     categories: categorySlice,
     walletState: walletsSlice,
     dialog: dialogSlice,
+    auth: authSlice,
   },
 });
 

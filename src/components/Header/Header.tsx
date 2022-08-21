@@ -1,3 +1,4 @@
+import { Settings, Logout } from "@mui/icons-material";
 import {
   AppBar,
   Toolbar,
@@ -9,13 +10,19 @@ import {
   Link as MuiLink,
   alpha,
   useTheme,
+  Menu,
+  MenuItem,
+  ListItemIcon,
 } from "@mui/material";
-import { forwardRef } from "react";
+import { signOut } from "firebase/auth";
+import { forwardRef, useState } from "react";
 import {
   Link as RouterLink,
   LinkProps as RouterLinkProps,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
+import { auth } from "../../firebase";
 
 const Link = forwardRef<
   HTMLAnchorElement,
@@ -50,6 +57,10 @@ const Link = forwardRef<
 });
 
 const Header = () => {
+  const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const open = Boolean(anchorEl);
+
   return (
     <AppBar position="sticky">
       <Toolbar>
@@ -83,18 +94,68 @@ const Header = () => {
 
         <Stack direction="row" spacing={3} flexGrow={1} ml={2}>
           <Link href="/">Transaction</Link>
-          <Link href="/settings">Settings</Link>
-          <Link href="/dashboard">dashboard</Link>
-          <Link href="/login">login</Link>
+          {/*
+            <Link href="/settings">Settings</Link>
+            <Link href="/dashboard">dashboard</Link>
+            <Link href="/login">login</Link> 
+          */}
         </Stack>
         <Box>
-          <IconButton sx={{ p: 0 }}>
+          <IconButton
+            id="basic-button"
+            aria-controls={open ? "basic-menu" : undefined}
+            aria-haspopup="true"
+            aria-expanded={open ? "true" : undefined}
+            onClick={(event) => {
+              setAnchorEl(event.currentTarget);
+            }}
+            sx={{ p: 0 }}
+          >
             <Avatar
               alt="User Image"
               src="/images/intel evo badge - unlevel.png"
             />
           </IconButton>
         </Box>
+        <Menu
+          id="basic-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={() => setAnchorEl(null)}
+          MenuListProps={{
+            "aria-labelledby": "basic-button",
+          }}
+          PaperProps={{
+            sx: {
+              mt: 1,
+            },
+          }}
+        >
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              navigate("/settings");
+            }}
+          >
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            Settings
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              signOut(auth).then(() => {
+                setAnchorEl(null);
+                // navigate("/login");
+              });
+            }}
+          >
+            <ListItemIcon>
+              <Logout fontSize="small" color="error" />
+            </ListItemIcon>
+            Logout
+          </MenuItem>
+        </Menu>
       </Toolbar>
     </AppBar>
   );
