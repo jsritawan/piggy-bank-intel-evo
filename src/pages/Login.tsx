@@ -18,7 +18,7 @@ import { updateUserAuth } from "../features/auth/auth-slice";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const isLoggedIn = useAppSelector((state) => state.auth.isLoggedIn);
+  const isLoggedIn = useAppSelector((state) => state.auth.user.isLoggedIn);
   const dispatch = useAppDispatch();
 
   const navigate = useNavigate();

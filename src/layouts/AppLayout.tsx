@@ -8,17 +8,18 @@ import { updateUserAuth } from "../features/auth/auth-slice";
 import { auth } from "../firebase";
 
 const AppLayout = () => {
-  const { isLoggedIn } = useAppSelector((state) => state.auth);
+  const { isLoggedIn } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
-      console.log({ user });
-
       if (!user) {
         dispatch(
           updateUserAuth({
+            name: null,
+            email: null,
+            photoURL: null,
             isLoggedIn: false,
           })
         );
@@ -35,7 +36,6 @@ const AppLayout = () => {
       }
     });
   }, [dispatch, navigate]);
-  console.log({ isLoggedIn });
 
   if (!isLoggedIn) {
     return <React.Fragment></React.Fragment>;

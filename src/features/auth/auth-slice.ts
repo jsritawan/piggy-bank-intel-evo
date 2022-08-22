@@ -7,17 +7,25 @@ type AuthUser = {
   isLoggedIn: boolean;
 };
 
-const initialState: Partial<AuthUser> = {};
+type AuthState = {
+  user: AuthUser;
+};
+
+const initialState: AuthState = {
+  user: {
+    name: null,
+    email: null,
+    photoURL: null,
+    isLoggedIn: false,
+  },
+};
 
 const authSlice = createSlice({
   name: "auth",
   initialState: initialState,
   reducers: {
-    updateUserAuth: function (state, action: PayloadAction<Partial<AuthUser>>) {
-      console.log(state === action.payload);
-      console.log({ payload: action.payload });
-
-      state = action.payload;
+    updateUserAuth: function (state, action: PayloadAction<AuthUser>) {
+      state.user = action.payload;
     },
   },
 });
