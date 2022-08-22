@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import logger from "redux-logger";
 import authSlice from "../features/auth/auth-slice";
 import categorySlice from "../features/category/category-slice";
 import dialogSlice from "../features/dialog/dialog-slice";
@@ -13,6 +14,7 @@ export const store = configureStore({
     dialog: dialogSlice,
     auth: authSlice,
   },
+  middleware: [logger],
 });
 
 export type AppDispatch = typeof store.dispatch;
