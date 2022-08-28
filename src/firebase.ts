@@ -28,4 +28,8 @@ export const analytics = getAnalytics(app);
 const googleAuthProvider = new GoogleAuthProvider();
 export const signInWithGoogle = () => signInWithPopup(auth, googleAuthProvider);
 
-export const masterPaletteColorRef = collection(db, "masCatColors");
+export const masColorColRef = collection(db, "masCatColors");
+export const masCatColRef = collection(db, "masCategories");
+export const categoryRef = collection(db, "categories");
+export const transactionRef = collection(db, "transactions");
+export const walletRef = collection(db, "wallets");

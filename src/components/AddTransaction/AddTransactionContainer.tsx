@@ -17,7 +17,7 @@ import {
 import { useFormik } from "formik";
 import React, { useCallback, useState } from "react";
 import { useAppSelector } from "../../app/hooks";
-import { Category, CategoryType } from "../../features/category/category-slice";
+import { Category } from "../../features/category/category-slice";
 import * as yup from "yup";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
@@ -43,8 +43,8 @@ interface TransactionForm {
 const AddTransactionContainer: React.FC<{
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }> = ({ setOpen }) => {
-  const categories = useAppSelector((state) => state.categories);
-  const [txnType, setTxnType] = useState<CategoryType>(2);
+  const categories = useAppSelector((state) => state.categories.categories);
+  const [txnType, setTxnType] = useState<number>(2);
   const [anchorEl, setAnchorEl] = useState<HTMLElement>();
   const [openCalendar, setOpenCalendar] = useState(false);
   const [preventOnClose, setPreventOnClose] = useState(false);

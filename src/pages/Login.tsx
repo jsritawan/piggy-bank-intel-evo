@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
   Box,
@@ -13,16 +13,8 @@ import { useFormik } from "formik";
 import * as yup from "yup";
 import { auth, signInWithGoogle } from "../firebase";
 import { FirebaseError } from "firebase/app";
-import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { updateUserAuth } from "../features/auth/auth-slice";
-import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-  const isLoggedIn = useAppSelector((state) => state.auth.user.isLoggedIn);
-  const dispatch = useAppDispatch();
-
-  const navigate = useNavigate();
-
   const [isLoading, setLoading] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -31,21 +23,7 @@ const Login = () => {
     async (email: string, password: string) => {
       try {
         setLoading(true);
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-        dispatch(
-          updateUserAuth({
-            name: userCredential.user.displayName,
-            email: userCredential.user.email,
-            photoURL: userCredential.user.photoURL,
-            isLoggedIn: true,
-          })
-        );
-        navigate("/");
+        await signInWithEmailAndPassword(auth, email, password);
       } catch (error) {
         if (error instanceof FirebaseError) {
           setErrorMessage(error.message);
@@ -58,23 +36,13 @@ const Login = () => {
         setLoading(false);
       }
     },
-    [dispatch, navigate]
+    []
   );
 
   const handleSignInWithGmail = useCallback(async () => {
     try {
       setLoading(true);
-      const userCredential = await signInWithGoogle();
-
-      dispatch(
-        updateUserAuth({
-          name: userCredential.user.displayName,
-          email: userCredential.user.email,
-          photoURL: userCredential.user.photoURL,
-          isLoggedIn: true,
-        })
-      );
-      navigate("/");
+      await signInWithGoogle();
     } catch (error) {
       if (error instanceof FirebaseError) {
         setErrorMessage(error.message);
@@ -86,7 +54,7 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  }, [dispatch, navigate]);
+  }, []);
 
   const handleOnSnackbarClose = () => {
     setOpenSnackbar(false);
@@ -106,12 +74,6 @@ const Login = () => {
     },
   });
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      navigate("/");
-    }
-  }, [isLoggedIn, navigate]);
-
   return (
     <React.Fragment>
       <Box
@@ -128,9 +90,14 @@ const Login = () => {
             boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
             minWidth: "375px",
             overflow: "clip",
+            position: "relative",
           }}
         >
-          {isLoading && <LinearProgress />}
+          {isLoading && (
+            <LinearProgress
+              sx={{ position: "absolute", top: "0px", width: "100%" }}
+            />
+          )}
           <Box sx={{ p: 3 }}>
             <form onSubmit={handleSubmit}>
               <Stack spacing={2}>

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { differenceInDays } from "date-fns";
 import { getDocs } from "firebase/firestore";
-import { masterPaletteColorRef } from "../../firebase";
+import { masColorColRef } from "../../firebase";
 import { MasPaletteColor } from "../../models/master-data";
 
 type InitialStateType = {
@@ -24,7 +24,7 @@ export const fetchMasCatColors = createAsyncThunk(
       }
     }
 
-    const snapshot = await getDocs(masterPaletteColorRef);
+    const snapshot = await getDocs(masColorColRef);
     const masCatColors = snapshot.docs.map((doc): MasPaletteColor => {
       const data = doc.data() as MasPaletteColor;
       return { ...data, id: doc.id };

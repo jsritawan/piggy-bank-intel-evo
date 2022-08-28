@@ -17,6 +17,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import { isEmpty } from "lodash";
 import { MouseEvent, useCallback, useMemo, useState } from "react";
 import { useAppSelector } from "../../app/hooks";
 import { Category } from "../../features/category/category-slice";
@@ -29,7 +30,7 @@ const SettingCategoryList: React.FC<{
   onDelete: (docId: string) => void;
 }> = ({ type, openDialog, onDelete }) => {
   const theme = useTheme();
-  const categories = useAppSelector((state) => state.categories);
+  const categories = useAppSelector((state) => state.categories.categories);
 
   const [mouseOverItemId, setMouseOverItemId] = useState<string>();
 
@@ -94,6 +95,9 @@ const SettingCategoryList: React.FC<{
             </ListItemAvatar>
           </ListItemButton>
         ))}
+        {isEmpty(filteredCategories) && (
+          <ListItemText sx={{ textAlign: "center" }}>ไม่พบข้อมูล</ListItemText>
+        )}
       </List>
     </Box>
   );
