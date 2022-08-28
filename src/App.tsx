@@ -5,7 +5,7 @@ import Transaction from "./pages/Transaction";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import AppLayout from "./layouts/AppLayout";
-import { Settings } from "./components/Settings";
+import Settings from "./pages/Settings";
 
 function App() {
   return (

@@ -5,6 +5,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import Header from "../components/Header/Header";
 import { updateUserAuth } from "../features/auth/auth-slice";
+import { fetchMasCatColors } from "../features/master/master-slice";
 import { auth } from "../firebase";
 
 const AppLayout = () => {
@@ -36,6 +37,10 @@ const AppLayout = () => {
       }
     });
   }, [dispatch, navigate]);
+
+  useEffect(() => {
+    dispatch(fetchMasCatColors());
+  }, [dispatch]);
 
   if (!isLoggedIn) {
     return <React.Fragment></React.Fragment>;

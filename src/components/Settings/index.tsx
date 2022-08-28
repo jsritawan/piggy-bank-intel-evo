@@ -1,1 +1,2 @@
-export { default as Settings } from "./Settings";
+export { default as SettingCategory } from "./SettingCategory";
+export { default as SettingWallet } from "./SettingWallet";

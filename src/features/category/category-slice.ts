@@ -9,12 +9,12 @@ export interface Category {
 }
 
 // const paletteColors = [
-//   "#4BBEEA",
+//   "#4bbeeA",
 //   "#ba68c8",
 //   "#ef5350",
 //   "#ff9800",
 //   "#4caf50",
-//   "#35393E",
+//   "#35393e",
 // ];
 
 const initialState: Category[] = [
