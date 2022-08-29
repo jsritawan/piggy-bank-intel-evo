@@ -7,11 +7,10 @@ import {
   DialogTitle,
   DialogContent,
 } from "@mui/material";
-import { getDocs, query, where } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "../../app/hooks";
+import { fetchCategories } from "../../features/category/category-slice";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
-import { transactionRef, walletRef } from "../../firebase";
 import AddTransactionContainer from "../AddTransaction/AddTransactionContainer";
 import DialogCreateWallet from "../Dialog/DialogCreateWallet";
 import PeriodContainer from "../Period/PeriodContainer";
@@ -23,7 +22,7 @@ const TransactionContainer = () => {
   const { selectedWallet, wallets } = useAppSelector(
     (state) => state.walletState
   );
-  const { uid, isLoggedIn } = useAppSelector((state) => state.auth.user);
+  const { uid, authenticated } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(false);
 
@@ -34,16 +33,10 @@ const TransactionContainer = () => {
   }, [wallets, dispatch]);
 
   useEffect(() => {
-    // query(walletRef, wh)
-
-    if (isLoggedIn) {
-      console.log(uid);
-
-      getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
-        console.log({ length: snapshot.docs.length });
-      });
+    if (authenticated && uid) {
+      dispatch(fetchCategories(uid));
     }
-  }, [isLoggedIn, uid]);
+  }, [authenticated, dispatch, uid]);
 
   return (
     <Box>

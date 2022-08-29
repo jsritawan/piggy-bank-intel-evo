@@ -17,7 +17,7 @@ import {
 import { useFormik } from "formik";
 import React, { useCallback, useState } from "react";
 import { useAppSelector } from "../../app/hooks";
-import { Category } from "../../features/category/category-slice";
+import { ICategory } from "../../features/category/category-slice";
 import * as yup from "yup";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
@@ -35,7 +35,7 @@ interface TransactionForm {
   id: string;
   amount: number;
   note?: string;
-  category: Category;
+  category: ICategory;
   labels?: string[];
   date: Date;
 }

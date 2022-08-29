@@ -2,11 +2,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface IWallet {
   id: string;
-  userId: string;
+  uid: string | null;
   balance: number;
   name: string;
+  default?: boolean;
   createAt: string;
-  updateAt?: string;
+  updateAt: string;
 }
 
 export interface IWalletState {
@@ -14,21 +15,16 @@ export interface IWalletState {
   wallets: IWallet[];
 }
 const initialState: IWalletState = {
-  wallets: [
-    {
-      id: "Thu Aug 04 2022 16:40:26 GMT+0700 (Indochina Time)",
-      userId: "userId",
-      name: "Init Cash Wallet",
-      balance: 0,
-      createAt: "Thu Aug 04 2022 16:40:26 GMT+0700 (Indochina Time)",
-    },
-  ],
+  wallets: [],
 };
 
 const walletsSlice = createSlice({
   name: "wallets",
   initialState,
   reducers: {
+    setWallet: function (state, action: PayloadAction<IWallet[]>) {
+      state.wallets = action.payload ?? [];
+    },
     addWallet: function (state, action: PayloadAction<IWallet>) {
       state.wallets.push(action.payload);
       if (!state.selectedWallet) {
@@ -43,5 +39,5 @@ const walletsSlice = createSlice({
   },
 });
 
-export const { addWallet, selectWallet } = walletsSlice.actions;
+export const { addWallet, selectWallet, setWallet } = walletsSlice.actions;
 export default walletsSlice.reducer;

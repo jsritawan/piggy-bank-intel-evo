@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { grey } from "@mui/material/colors";
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Transaction from "./pages/Transaction";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -15,6 +15,8 @@ import { useAppDispatch } from "./app/hooks";
 function App() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { pathname } = location;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -25,7 +27,7 @@ function App() {
             name: null,
             email: null,
             photoURL: null,
-            isLoggedIn: false,
+            authenticated: false,
           })
         );
         navigate("/login");
@@ -36,14 +38,17 @@ function App() {
             name: user.displayName,
             email: user.email,
             photoURL: user.photoURL,
-            isLoggedIn: true,
+            authenticated: true,
           })
         );
-        navigate("/");
+
+        if (pathname.startsWith("/login")) {
+          navigate("/");
+        }
       }
     });
     return () => unsubscribe();
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, pathname]);
 
   return (
     <Box sx={{ bgcolor: grey[100], height: "100vh", pb: 4, overflow: "auto" }}>

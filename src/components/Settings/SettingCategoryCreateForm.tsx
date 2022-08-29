@@ -13,10 +13,14 @@ import { useFormik } from "formik";
 import { useState } from "react";
 import { useAppSelector } from "../../app/hooks";
 import * as yup from "yup";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { categoryRef } from "../../firebase";
 
 const SettingCategoryCreateForm = () => {
   const paletteColors = useAppSelector((state) => state.master.paletteColors);
+  const { uid } = useAppSelector((state) => state.auth.user);
   const [selectedColorId, setSelectedColorId] = useState<string>();
+  const [disabled, setDisabled] = useState(false);
 
   const { errors, touched, getFieldProps, handleSubmit, setFieldValue } =
     useFormik({
@@ -30,10 +34,22 @@ const SettingCategoryCreateForm = () => {
         name: yup.string().required(),
         type: yup.number().required(),
       }),
-      onSubmit: function (values, { resetForm }) {
-        console.log({ values });
-        resetForm();
-        setSelectedColorId(undefined);
+      onSubmit: async ({ name, color, type }, { resetForm }) => {
+        setDisabled(true);
+        setDoc(doc(categoryRef), {
+          color,
+          name,
+          type,
+          uid,
+          isDeletable: true,
+          isEditable: true,
+          createAt: serverTimestamp(),
+          updateAt: serverTimestamp(),
+        }).finally(() => {
+          resetForm();
+          setSelectedColorId(undefined);
+          setDisabled(false);
+        });
       },
     });
 
@@ -66,6 +82,7 @@ const SettingCategoryCreateForm = () => {
                   setSelectedColorId(pc.id);
                   setFieldValue("color", pc.color);
                 }}
+                disabled={disabled}
               >
                 <Box
                   sx={{
@@ -86,6 +103,7 @@ const SettingCategoryCreateForm = () => {
               select
               error={touched.type && !!errors.type}
               helperText={touched.type && errors.type}
+              disabled={disabled}
             >
               <MenuItem value={1}>รายรับ</MenuItem>
               <MenuItem value={2}>รายจ่าย</MenuItem>
@@ -98,10 +116,16 @@ const SettingCategoryCreateForm = () => {
                 autoComplete: "off",
               }}
               error={touched.name && !!errors.name}
+              disabled={disabled}
             />
           </Stack>
           <Box>
-            <Button type="submit" size="small" variant="contained">
+            <Button
+              type="submit"
+              size="small"
+              variant="contained"
+              disabled={disabled}
+            >
               เพิ่มหมวดหมู่
             </Button>
           </Box>

@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Category } from "../category/category-slice";
+import { ICategory } from "../category/category-slice";
 
 export interface Transaction {
   id: string;
+  uid: string;
   amount: number;
   note?: string;
-  category: Category;
+  category: ICategory;
   labels?: string[];
   displayDate: string;
-  createAt: Date;
+  createAt: string;
+  updateAt: string;
 }
 
 const initialState: Transaction[] = [];

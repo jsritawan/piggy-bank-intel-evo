@@ -10,10 +10,11 @@ import {
 } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
-import { addWallet } from "../../features/wallets/wallets-slice";
 import * as yup from "yup";
 import { useFormik } from "formik";
 import { useCallback } from "react";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { walletRef } from "../../firebase";
 
 const validationSchema = yup.object().shape({
   name: yup.string().max(100).required(),
@@ -22,9 +23,8 @@ const validationSchema = yup.object().shape({
 
 const DialogCreateWallet = () => {
   const openDialog = useAppSelector((state) => state.dialog.openCreateWallet);
+  const { uid } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
-
-  const userId = "userId";
 
   const formik = useFormik({
     initialValues: {
@@ -32,18 +32,18 @@ const DialogCreateWallet = () => {
       balance: "0",
     },
     validationSchema,
-    onSubmit({ name, balance }, formikHelpers) {
-      dispatch(
-        addWallet({
-          id: new Date().toString(),
-          userId,
-          name: name,
-          balance: +balance,
-          createAt: new Date().toString(),
-        })
-      );
-      dispatch(toggleDialog("openCreateWallet"));
-      formikHelpers.resetForm();
+    onSubmit: function ({ name, balance }, formikHelpers) {
+      setDoc(doc(walletRef), {
+        uid,
+        name: name,
+        balance: +balance,
+        default: true,
+        createAt: serverTimestamp(),
+        updateAt: serverTimestamp(),
+      }).then(() => {
+        dispatch(toggleDialog("openCreateWallet"));
+        formikHelpers.resetForm();
+      });
     },
   });
 

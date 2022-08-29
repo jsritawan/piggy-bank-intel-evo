@@ -16,13 +16,13 @@ import {
 import { useFormik } from "formik";
 import React, { useState } from "react";
 import { useAppSelector } from "../../app/hooks";
-import { Category } from "../../features/category/category-slice";
+import { ICategory } from "../../features/category/category-slice";
 import * as yup from "yup";
 
 interface Props {
   openConfirm: React.Dispatch<React.SetStateAction<boolean>>;
   onClose: () => void;
-  category: Category;
+  category: ICategory;
 }
 
 const SettingCategoryEditDialog: React.FC<Props> = ({
@@ -65,6 +65,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
             variant="text"
             color="error"
             onClick={() => openConfirm(true)}
+            disabled={!category.isEditable}
           >
             ลบ
           </Button>
@@ -97,6 +98,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
                     setSelectedColor(pc.color);
                     setFieldValue("color", pc.color);
                   }}
+                  disabled={!category.isEditable}
                 >
                   <Box
                     sx={{
@@ -117,6 +119,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
                 select
                 error={touched.type && !!errors.type}
                 helperText={touched.type && errors.type}
+                disabled={!category.isEditable}
               >
                 <MenuItem value={1}>รายรับ</MenuItem>
                 <MenuItem value={2}>รายจ่าย</MenuItem>
@@ -129,13 +132,18 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
                   autoComplete: "off",
                 }}
                 error={touched.name && !!errors.name}
+                disabled={!category.isEditable}
               />
             </Stack>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: "16px 24px" }}>
           <Button onClick={onClose}>ยกเลิก</Button>
-          <Button type="submit" variant="contained">
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={!category.isEditable}
+          >
             บันทึก
           </Button>
         </DialogActions>

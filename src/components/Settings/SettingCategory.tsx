@@ -18,19 +18,24 @@ import {
   useTheme,
 } from "@mui/material";
 import { isEmpty } from "lodash";
-import { MouseEvent, useCallback, useMemo, useState } from "react";
-import { useAppSelector } from "../../app/hooks";
-import { Category } from "../../features/category/category-slice";
+import { MouseEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+  fetchCategories,
+  ICategory,
+} from "../../features/category/category-slice";
 import SettingCategoryCreateForm from "./SettingCategoryCreateForm";
 import SettingCategoryEditDialog from "./SettingCategoryEditDialog";
 
 const SettingCategoryList: React.FC<{
   type: number;
-  openDialog: (cat: Category) => void;
+  openDialog: (cat: ICategory) => void;
   onDelete: (docId: string) => void;
 }> = ({ type, openDialog, onDelete }) => {
   const theme = useTheme();
   const categories = useAppSelector((state) => state.categories.categories);
+  const { uid, authenticated } = useAppSelector((state) => state.auth.user);
+  const dispatch = useAppDispatch();
 
   const [mouseOverItemId, setMouseOverItemId] = useState<string>();
 
@@ -47,6 +52,12 @@ const SettingCategoryList: React.FC<{
     },
     [onDelete]
   );
+
+  useEffect(() => {
+    if (authenticated && uid) {
+      dispatch(fetchCategories(uid));
+    }
+  }, [authenticated, dispatch, uid]);
 
   return (
     <Box>
@@ -87,7 +98,7 @@ const SettingCategoryList: React.FC<{
                 width: theme.spacing(3),
               }}
             >
-              {cat.id === mouseOverItemId && (
+              {cat.isDeletable && cat.id === mouseOverItemId && (
                 <IconButton onClick={onClickDelete(cat.id)}>
                   <DeleteRounded color="error" />
                 </IconButton>
@@ -106,9 +117,9 @@ const SettingCategoryList: React.FC<{
 const SettingCategory = () => {
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [cat, setCat] = useState<Category>();
+  const [cat, setCat] = useState<ICategory>();
 
-  const handleEditDialogOpen = (category: Category) => {
+  const handleEditDialogOpen = (category: ICategory) => {
     setCat(category);
     setOpenEditDialog(true);
   };

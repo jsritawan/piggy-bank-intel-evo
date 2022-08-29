@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
-  addDoc,
   getDocs,
   orderBy,
   query,
@@ -11,58 +10,77 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { isEmpty } from "lodash";
-import {
-  auth,
-  categoryRef,
-  db,
-  masCatColRef,
-  masColorColRef,
-} from "../../firebase";
+import { categoryRef, db, masCatColRef } from "../../firebase";
 
-export interface Category {
+export interface ICategory {
   uid: string;
   id: string;
   color: string;
   name: string;
   type: number;
   isDeletable?: boolean;
-  useAt?: Timestamp;
-  createAt: Timestamp;
-  updateAt?: Timestamp;
+  isEditable?: boolean;
+  createAt: string;
+  updateAt?: string;
 }
 
 export const fetchCategories = createAsyncThunk(
   "category/fetchCategories",
   async (uid: string) => {
     const q = query(categoryRef, where("uid", "==", uid), orderBy("name"));
-    const snapshot = await getDocs(q);
-
-    console.log(snapshot.docs);
+    let snapshot = await getDocs(q);
 
     if (isEmpty(snapshot.docs)) {
-      const masSnapshot = await getDocs(query(masCatColRef, orderBy("name")));
+      try {
+        const masSnapshot = await getDocs(query(masCatColRef, orderBy("name")));
+        const batch = writeBatch(db);
+        masSnapshot.docs.forEach(async (d) => {
+          const data = d.data();
+          const { color, name, type, isDeletable, isEditable } = data;
+          batch.set(doc(categoryRef), {
+            color,
+            name,
+            type,
+            uid,
+            isDeletable: data["isDeletable"] !== undefined ? isDeletable : true,
+            isEditable: data["isEditable"] !== undefined ? isEditable : true,
+            createAt: serverTimestamp(),
+            updateAt: serverTimestamp(),
+          });
+        });
 
-      // const batch = writeBatch(db)
-      // const docRef = doc(categoryRef)
-      // masSnapshot.docs.forEach(doc => {
-
-      //         const {color,name,type,isDeletable} = doc.data()
-      //         batch.set(docRef, {
-      //           uid,
-      // color,name,type,
-      // isDeletable: typeof isDeletable ==='undefined'
-      // createAt: serverTimestamp()
-      //         })
-      // })
-      // batch.commit()
-      console.log(masSnapshot.docs.map((d) => d.data()));
+        await batch.commit();
+        snapshot = await getDocs(q);
+      } catch (error) {
+        console.error(error);
+      }
     }
-    return snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+
+    const categories = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      const { color, name, type, isDeletable, isEditable, createAt, updateAt } =
+        data;
+
+      const category: ICategory = {
+        id: doc.id,
+        color,
+        name,
+        type,
+        uid,
+        isDeletable: data["isDeletable"] !== undefined ? isDeletable : true,
+        isEditable: data["isEditable"] !== undefined ? isEditable : true,
+        createAt: (createAt as Timestamp).valueOf(),
+        updateAt: updateAt ? (updateAt as Timestamp).valueOf() : undefined,
+      };
+
+      return category;
+    });
+    return categories;
   }
 );
 
 const initialState: {
-  categories: Category[];
+  categories: ICategory[];
 } = {
   categories: [],
 };
@@ -72,9 +90,13 @@ const categorySlice = createSlice({
   initialState,
   reducers: {},
   extraReducers(builder) {
-    builder.addCase(fetchCategories.fulfilled, (state, action) => {
-      // state.categories = action.payload;
-    });
+    builder
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        state.categories = action.payload;
+      })
+      .addCase(fetchCategories.rejected, (state, action) => {
+        console.error(action.error.message);
+      });
   },
 });
 
