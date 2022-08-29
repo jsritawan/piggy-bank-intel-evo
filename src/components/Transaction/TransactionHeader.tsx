@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Fade, Grid, Stack, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import { useAppSelector } from "../../app/hooks";
+import { IWallet } from "../../features/wallets/wallets-slice";
 
 const BalanceCard: React.FC<{ title: string; balance: number }> = ({
   title,
@@ -37,7 +38,13 @@ const BalanceCard: React.FC<{ title: string; balance: number }> = ({
 };
 
 const TransactionHeader = () => {
-  const wallet = useAppSelector((state) => state.walletState.selectedWallet);
+  const wallets = useAppSelector((state) => state.walletState.wallets);
+  const [wallet, setWallet] = useState<IWallet>();
+
+  useEffect(() => {
+    setWallet(wallets.find((w) => w.default));
+  }, [wallets]);
+
   return (
     <Fade in={!!wallet} unmountOnExit>
       <Box mt={2}>

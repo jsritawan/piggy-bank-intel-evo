@@ -10,15 +10,21 @@ import {
   alpha,
 } from "@mui/material";
 import { useFormik } from "formik";
-import { useState } from "react";
-import { useAppSelector } from "../../app/hooks";
+import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import * as yup from "yup";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { categoryRef } from "../../firebase";
+import { grey, red } from "@mui/material/colors";
+import { fetchCategories } from "../../features/category/category-slice";
 
 const SettingCategoryCreateForm = () => {
   const paletteColors = useAppSelector((state) => state.master.paletteColors);
+  const categories = useAppSelector((state) => state.categories.categories);
   const { uid } = useAppSelector((state) => state.auth.user);
+
+  const dispatch = useAppDispatch();
+
   const [selectedColorId, setSelectedColorId] = useState<string>();
   const [disabled, setDisabled] = useState(false);
 
@@ -35,6 +41,10 @@ const SettingCategoryCreateForm = () => {
         type: yup.number().required(),
       }),
       onSubmit: async ({ name, color, type }, { resetForm }) => {
+        if (categories.length === 50) {
+          return;
+        }
+
         setDisabled(true);
         setDoc(doc(categoryRef), {
           color,
@@ -45,17 +55,37 @@ const SettingCategoryCreateForm = () => {
           isEditable: true,
           createAt: serverTimestamp(),
           updateAt: serverTimestamp(),
-        }).finally(() => {
-          resetForm();
-          setSelectedColorId(undefined);
-          setDisabled(false);
-        });
+        })
+          .then(() => {
+            if (uid) {
+              dispatch(fetchCategories(uid));
+            }
+          })
+          .finally(() => {
+            resetForm();
+            setSelectedColorId(undefined);
+            setDisabled(false);
+          });
       },
     });
 
+  useEffect(() => {
+    setDisabled(categories.length === 50);
+  }, [categories]);
+
   return (
     <Box>
-      <Typography>เพิ่มหมวดหมู่ใหม่</Typography>
+      <Typography>
+        หมวดหมู่ทั้งหมด
+        <Typography
+          component="span"
+          fontSize="12px"
+          ml={1}
+          sx={{ color: categories.length === 50 ? red : grey[600] }}
+        >
+          ({categories.length}/50)
+        </Typography>
+      </Typography>
       <Divider sx={{ my: 2 }} />
       <form onSubmit={handleSubmit}>
         <Stack spacing={1}>

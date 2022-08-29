@@ -17,6 +17,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import { grey } from "@mui/material/colors";
 import { isEmpty } from "lodash";
 import { MouseEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -61,7 +62,17 @@ const SettingCategoryList: React.FC<{
 
   return (
     <Box>
-      <Typography>{type === 1 ? "รายรับ" : "รายจ่าย"}</Typography>
+      <Typography>
+        {type === 1 ? "รายรับ" : "รายจ่าย"}
+        <Typography
+          component="span"
+          fontSize="12px"
+          ml={1}
+          sx={{ color: grey[600] }}
+        >
+          ({filteredCategories.length})
+        </Typography>
+      </Typography>
       <Divider sx={{ my: 2 }} />
       <List
         disablePadding

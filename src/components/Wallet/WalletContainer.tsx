@@ -4,6 +4,7 @@ import {
   ArrowDropUp,
 } from "@mui/icons-material";
 import {
+  alpha,
   Box,
   Button,
   ButtonBase,
@@ -12,30 +13,75 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import {
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  Timestamp,
+  where,
+  writeBatch,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
-import { selectWallet } from "../../features/wallets/wallets-slice";
+import { IWallet, setWallet } from "../../features/wallets/wallets-slice";
+import { db, walletRef } from "../../firebase";
 
 const WalletContainer = () => {
-  const { selectedWallet, wallets } = useAppSelector(
-    (state) => state.walletState
-  );
+  const { wallets } = useAppSelector((state) => state.walletState);
+  const { uid } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
 
   const [listWallet, setListWallet] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<IWallet | null>(null);
 
-  const handleSelectWallet = (walletId: string) => {
-    dispatch(selectWallet(walletId));
+  const handleSelectWallet = (newDefaultId: string, oldDefaultId?: string) => {
+    const batch = writeBatch(db);
 
-    setListWallet(false);
+    if (oldDefaultId) {
+      batch.update(doc(walletRef, oldDefaultId), {
+        default: false,
+        updateAt: serverTimestamp(),
+      });
+    }
+
+    batch.update(doc(walletRef, newDefaultId), {
+      default: true,
+      updateAt: serverTimestamp(),
+    });
+
+    batch.commit().then(() => {
+      getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
+        const wallets: IWallet[] = snapshot.docs.map((d) => {
+          const { balance, name, createAt, updateAt } = d.data();
+          return {
+            id: d.id,
+            uid,
+            balance,
+            name,
+            default: d.data().default,
+            createAt: createAt
+              ? (createAt as Timestamp).toDate().toString()
+              : "",
+            updateAt: updateAt
+              ? (updateAt as Timestamp).toDate().toString()
+              : "",
+          };
+        });
+        dispatch(setWallet(wallets));
+      });
+
+      setListWallet(false);
+    });
   };
 
   useEffect(() => {
-    if (!selectedWallet && wallets.length > 0) {
-      dispatch(selectWallet(wallets[0].id));
+    const wallet = wallets.find((w) => w.default);
+    if (wallet) {
+      setSelectedWallet(wallet);
     }
-  }, [selectedWallet, wallets, dispatch]);
+  }, [wallets]);
 
   return (
     <Stack spacing={2}>
@@ -91,13 +137,21 @@ const WalletContainer = () => {
                       width: "100%",
                       borderRadius: 1,
                       overflow: "clip",
+                      bgcolor: "#fff",
+                      borderStyle: "solid",
+                      borderWidth: "2px",
+                      borderColor: w.default
+                        ? alpha("#0BA5E1", 0.4)
+                        : "transparent",
                       boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
+                      "&:hover": {
+                        bgcolor: alpha("#fff", 0.4),
+                      },
                     }}
-                    onClick={() => handleSelectWallet(w.id)}
+                    onClick={() => handleSelectWallet(w.id, selectedWallet?.id)}
                   >
                     <Stack
                       sx={{
-                        bgcolor: "#fff",
                         p: 2,
                         width: "100%",
                         textAlign: "left",

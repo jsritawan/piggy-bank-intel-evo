@@ -15,9 +15,14 @@ import {
 } from "@mui/material";
 import { useFormik } from "formik";
 import React, { useState } from "react";
-import { useAppSelector } from "../../app/hooks";
-import { ICategory } from "../../features/category/category-slice";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+  fetchCategories,
+  ICategory,
+} from "../../features/category/category-slice";
 import * as yup from "yup";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { categoryRef } from "../../firebase";
 
 interface Props {
   openConfirm: React.Dispatch<React.SetStateAction<boolean>>;
@@ -31,6 +36,8 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
   onClose,
 }) => {
   const paletteColors = useAppSelector((state) => state.master.paletteColors);
+  const { uid } = useAppSelector((state) => state.auth.user);
+  const dispatch = useAppDispatch();
   const [selectedColor, setSelectedColor] = useState<string>(category.color);
 
   const { errors, touched, getFieldProps, handleSubmit, setFieldValue } =
@@ -45,9 +52,18 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
         name: yup.string().required(),
         type: yup.number().required(),
       }),
-      onSubmit: function (values) {
-        console.log({ values });
-        onClose();
+      onSubmit: function ({ color, name, type }) {
+        updateDoc(doc(categoryRef, category.id), {
+          color,
+          name,
+          type,
+          updateAt: serverTimestamp(),
+        }).then(() => {
+          if (uid) {
+            dispatch(fetchCategories(uid));
+          }
+          onClose();
+        });
       },
     });
 

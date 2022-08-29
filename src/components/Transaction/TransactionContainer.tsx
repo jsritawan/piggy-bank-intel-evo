@@ -7,24 +7,29 @@ import {
   DialogTitle,
   DialogContent,
 } from "@mui/material";
+import { getDocs, query, where, Timestamp } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "../../app/hooks";
 import { fetchCategories } from "../../features/category/category-slice";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
+import { IWallet, setWallet } from "../../features/wallets/wallets-slice";
+import { walletRef } from "../../firebase";
 import AddTransactionContainer from "../AddTransaction/AddTransactionContainer";
-import DialogCreateWallet from "../Dialog/DialogCreateWallet";
 import PeriodContainer from "../Period/PeriodContainer";
 import { WalletContainer } from "../Wallet";
 import TransactionHeader from "./TransactionHeader";
 import TransactionList from "./TransactionList";
 
 const TransactionContainer = () => {
-  const { selectedWallet, wallets } = useAppSelector(
-    (state) => state.walletState
-  );
+  const { wallets } = useAppSelector((state) => state.walletState);
   const { uid, authenticated } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<IWallet>();
+
+  useEffect(() => {
+    setSelectedWallet(wallets.find((w) => w.default));
+  }, [wallets]);
 
   useEffect(() => {
     if (wallets.length === 0) {
@@ -35,6 +40,26 @@ const TransactionContainer = () => {
   useEffect(() => {
     if (authenticated && uid) {
       dispatch(fetchCategories(uid));
+
+      getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
+        const wallets: IWallet[] = snapshot.docs.map((d) => {
+          const { balance, name, createAt, updateAt } = d.data();
+          return {
+            id: d.id,
+            uid,
+            balance,
+            name,
+            default: d.data().default,
+            createAt: createAt
+              ? (createAt as Timestamp).toDate().toString()
+              : "",
+            updateAt: updateAt
+              ? (updateAt as Timestamp).toDate().toString()
+              : "",
+          };
+        });
+        dispatch(setWallet(wallets));
+      });
     }
   }, [authenticated, dispatch, uid]);
 
@@ -97,7 +122,6 @@ const TransactionContainer = () => {
           </>
         )}
       </Stack>
-      <DialogCreateWallet />
     </Box>
   );
 };

@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { ICategory } from "../category/category-slice";
 
-export interface Transaction {
+export interface ITransaction {
   id: string;
   uid: string;
   amount: number;
@@ -13,13 +13,13 @@ export interface Transaction {
   updateAt: string;
 }
 
-const initialState: Transaction[] = [];
+const initialState: ITransaction[] = [];
 
 const transactionsSlice = createSlice({
   name: "transactions",
   initialState: initialState,
   reducers: {
-    addTransaction: (state, action: PayloadAction<Transaction>) => {
+    addTransaction: (state, action: PayloadAction<ITransaction>) => {
       state.push(action.payload);
     },
   },

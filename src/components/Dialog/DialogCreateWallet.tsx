@@ -13,8 +13,17 @@ import { toggleDialog } from "../../features/dialog/dialog-slice";
 import * as yup from "yup";
 import { useFormik } from "formik";
 import { useCallback } from "react";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 import { walletRef } from "../../firebase";
+import { IWallet, setWallet } from "../../features/wallets/wallets-slice";
 
 const validationSchema = yup.object().shape({
   name: yup.string().max(100).required(),
@@ -41,6 +50,29 @@ const DialogCreateWallet = () => {
         createAt: serverTimestamp(),
         updateAt: serverTimestamp(),
       }).then(() => {
+        if (uid) {
+          getDocs(query(walletRef, where("uid", "==", uid))).then(
+            (snapshot) => {
+              const wallets: IWallet[] = snapshot.docs.map((d) => {
+                const { balance, name, createAt, updateAt } = d.data();
+                return {
+                  id: d.id,
+                  uid,
+                  balance,
+                  name,
+                  default: d.data().default,
+                  createAt: createAt
+                    ? (createAt as Timestamp).toDate().toString()
+                    : "",
+                  updateAt: updateAt
+                    ? (updateAt as Timestamp).toDate().toString()
+                    : "",
+                };
+              });
+              dispatch(setWallet(wallets));
+            }
+          );
+        }
         dispatch(toggleDialog("openCreateWallet"));
         formikHelpers.resetForm();
       });
