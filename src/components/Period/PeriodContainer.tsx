@@ -5,11 +5,21 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { add, endOfMonth, format, startOfMonth, sub } from "date-fns";
 import { isSameMonth } from "date-fns/esm";
 import { th } from "date-fns/locale";
-import { useEffect, useState } from "react";
+import {
+  Dispatch,
+  FunctionComponent,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 
-const PeriodContainer = () => {
+interface IProps {
+  date: Date;
+  setDate: Dispatch<SetStateAction<Date | null>>;
+}
+
+const PeriodContainer: FunctionComponent<IProps> = ({ date, setDate }) => {
   const [period, setPeriod] = useState<string>("");
-  const [date, setDate] = useState<Date>(new Date());
   const [openDatePicker, setOpenDatePicker] = useState(false);
 
   useEffect(() => {

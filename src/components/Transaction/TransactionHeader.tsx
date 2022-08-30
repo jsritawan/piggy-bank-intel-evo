@@ -1,13 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React, { FunctionComponent, useEffect, useMemo, useState } from "react";
 import { Fade, Grid, Stack, Typography } from "@mui/material";
 import { Box } from "@mui/system";
-import { useAppSelector } from "../../app/hooks";
-import { IWallet } from "../../features/wallets/wallets-slice";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { setDefaultWallet } from "../../features/wallets/wallets-slice";
 
-const BalanceCard: React.FC<{ title: string; balance: number }> = ({
+interface IProps {
+  title: string;
+  balance: number;
+  color?: string;
+}
+
+const BalanceCard: FunctionComponent<IProps> = ({
   title,
   balance,
+  color: colorProps,
 }) => {
+  const color = useMemo(() => {
+    if (colorProps) {
+      return colorProps;
+    }
+    return balance >= 0 ? "#4BBEEA" : "error";
+  }, [balance, colorProps]);
+
   return (
     <Stack
       sx={{
@@ -22,12 +36,7 @@ const BalanceCard: React.FC<{ title: string; balance: number }> = ({
       <Typography variant="body1" textOverflow={"ellipsis"} noWrap>
         {title}
       </Typography>
-      <Typography
-        variant="h5"
-        color={balance >= 0 ? "#4BBEEA" : "error"}
-        textOverflow={"ellipsis"}
-        noWrap
-      >
+      <Typography variant="h5" color={color} textOverflow={"ellipsis"} noWrap>
         {balance.toLocaleString(undefined, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
@@ -38,12 +47,40 @@ const BalanceCard: React.FC<{ title: string; balance: number }> = ({
 };
 
 const TransactionHeader = () => {
-  const wallets = useAppSelector((state) => state.walletState.wallets);
-  const [wallet, setWallet] = useState<IWallet>();
+  const dispatch = useAppDispatch();
+  const { defaultWallet: wallet, wallets } = useAppSelector(
+    (state) => state.walletState
+  );
+  const transactions = useAppSelector((state) => state.txn.transactions);
+
+  const [detail, setDetail] = useState({
+    expense: 0,
+    income: 0,
+    total: 0,
+  });
 
   useEffect(() => {
-    setWallet(wallets.find((w) => w.default));
-  }, [wallets]);
+    dispatch(setDefaultWallet(wallets.find((w) => w.default)));
+  }, [wallets, dispatch]);
+
+  useEffect(() => {
+    let expense = 0;
+    let income = 0;
+
+    for (let txn of transactions) {
+      if (txn.type === 1) {
+        income += txn.amount;
+      } else {
+        expense += txn.amount;
+      }
+    }
+
+    setDetail({
+      income,
+      expense,
+      total: income - expense,
+    });
+  }, [transactions]);
 
   return (
     <Fade in={!!wallet} unmountOnExit>
@@ -54,13 +91,21 @@ const TransactionHeader = () => {
               <BalanceCard title="จำนวนเงินทั้งหมด" balance={wallet.balance} />
             </Grid>
             <Grid md={3} xs={6} item>
-              <BalanceCard title="รายรับ" balance={wallet.balance} />
+              <BalanceCard
+                title="รายรับ"
+                balance={detail.income}
+                color="#4BBEEA"
+              />
             </Grid>
             <Grid md={3} xs={6} item>
-              <BalanceCard title="รายจ่าย" balance={wallet.balance} />
+              <BalanceCard
+                title="รายจ่าย"
+                balance={detail.expense}
+                color="error"
+              />
             </Grid>
             <Grid md={3} xs={6} item>
-              <BalanceCard title="คงเหลือ" balance={wallet.balance} />
+              <BalanceCard title="คงเหลือ" balance={detail.total} />
             </Grid>
           </Grid>
         )}

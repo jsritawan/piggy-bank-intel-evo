@@ -33,8 +33,8 @@ import { cloneDeep } from "lodash";
 import { FormEvent, MouseEvent, useCallback, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
-import { IWallet, setWallet } from "../../features/wallets/wallets-slice";
-import { walletRef } from "../../firebase";
+import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
+import { transactionRef, walletRef } from "../../firebase";
 
 const SettingWallet = () => {
   const theme = useTheme();
@@ -77,15 +77,30 @@ const SettingWallet = () => {
       setSelectedWallet(wallet);
     };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedWallet) {
-      deleteDoc(doc(walletRef, selectedWallet.id)).then(() => {
-        setOpenConfirmDialog(false);
-        setSelectedWallet(null);
-        if (uid) {
-          fetchWallets(uid);
-        }
-      });
+      await deleteDoc(doc(walletRef, selectedWallet.id));
+
+      const snapshot = await getDocs(
+        query(
+          transactionRef,
+          where("uid", "==", uid),
+          where("walletId", "==", selectedWallet.id),
+          where("deleted", "!=", true)
+        )
+      );
+
+      for (let document of snapshot.docs) {
+        updateDoc(doc(transactionRef, document.id), {
+          deleted: true,
+        }).catch((error) => console.error(error));
+      }
+
+      setOpenConfirmDialog(false);
+      setSelectedWallet(null);
+      if (uid) {
+        fetchWallets(uid);
+      }
     }
   };
 
@@ -113,7 +128,7 @@ const SettingWallet = () => {
               : "",
           };
         });
-        dispatch(setWallet(wallets));
+        dispatch(setWallets(wallets));
       });
     },
     [dispatch]

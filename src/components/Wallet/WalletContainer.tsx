@@ -25,7 +25,7 @@ import {
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
-import { IWallet, setWallet } from "../../features/wallets/wallets-slice";
+import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
 import { db, walletRef } from "../../firebase";
 
 const WalletContainer = () => {
@@ -69,7 +69,7 @@ const WalletContainer = () => {
               : "",
           };
         });
-        dispatch(setWallet(wallets));
+        dispatch(setWallets(wallets));
       });
 
       setListWallet(false);

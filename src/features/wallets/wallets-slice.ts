@@ -12,6 +12,7 @@ export interface IWallet {
 
 export interface IWalletState {
   wallets: IWallet[];
+  defaultWallet?: IWallet;
 }
 
 const initialState: IWalletState = {
@@ -22,11 +23,14 @@ const walletsSlice = createSlice({
   name: "wallets",
   initialState,
   reducers: {
-    setWallet: function (state, action: PayloadAction<IWallet[]>) {
+    setWallets: function (state, action: PayloadAction<IWallet[]>) {
       state.wallets = action.payload ?? [];
+    },
+    setDefaultWallet: (state, action: PayloadAction<IWallet | undefined>) => {
+      state.defaultWallet = action.payload;
     },
   },
 });
 
-export const { setWallet } = walletsSlice.actions;
+export const { setWallets, setDefaultWallet } = walletsSlice.actions;
 export default walletsSlice.reducer;

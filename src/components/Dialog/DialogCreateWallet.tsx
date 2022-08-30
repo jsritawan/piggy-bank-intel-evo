@@ -23,7 +23,7 @@ import {
   where,
 } from "firebase/firestore";
 import { walletRef } from "../../firebase";
-import { IWallet, setWallet } from "../../features/wallets/wallets-slice";
+import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
 
 const validationSchema = yup.object().shape({
   name: yup.string().max(100).required(),
@@ -69,7 +69,7 @@ const DialogCreateWallet = () => {
                     : "",
                 };
               });
-              dispatch(setWallet(wallets));
+              dispatch(setWallets(wallets));
             }
           );
         }

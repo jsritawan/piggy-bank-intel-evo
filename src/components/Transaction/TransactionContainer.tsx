@@ -12,8 +12,10 @@ import { useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "../../app/hooks";
 import { fetchCategories } from "../../features/category/category-slice";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
-import { IWallet, setWallet } from "../../features/wallets/wallets-slice";
+import { fetchTransaction } from "../../features/transactions/transactions-slice";
+import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
 import { walletRef } from "../../firebase";
+import { useMounted } from "../../hooks";
 import AddTransactionContainer from "../AddTransaction/AddTransactionContainer";
 import PeriodContainer from "../Period/PeriodContainer";
 import { WalletContainer } from "../Wallet";
@@ -21,11 +23,31 @@ import TransactionHeader from "./TransactionHeader";
 import TransactionList from "./TransactionList";
 
 const TransactionContainer = () => {
-  const { wallets } = useAppSelector((state) => state.walletState);
+  const mounted = useMounted();
+  const { defaultWallet, wallets } = useAppSelector(
+    (state) => state.walletState
+  );
   const { uid, authenticated } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<IWallet>();
+  const [isLoading, setLoading] = useState(true);
+  const [date, setDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (date && defaultWallet?.id && uid) {
+      const promise = dispatch(
+        fetchTransaction({ date, uid, walletId: defaultWallet.id })
+      );
+      return () => {
+        promise.abort();
+      };
+    }
+  }, [date, defaultWallet?.id, dispatch, uid]);
+
+  useEffect(() => {
+    setDate(new Date());
+  }, []);
 
   useEffect(() => {
     setSelectedWallet(wallets.find((w) => w.default));
@@ -58,10 +80,15 @@ const TransactionContainer = () => {
               : "",
           };
         });
-        dispatch(setWallet(wallets));
+        dispatch(setWallets(wallets));
+        setLoading(false);
       });
     }
   }, [authenticated, dispatch, uid]);
+
+  if (mounted.current || isLoading) {
+    return <></>;
+  }
 
   return (
     <Box>
@@ -97,7 +124,7 @@ const TransactionContainer = () => {
                   alignItems: "center",
                 }}
               >
-                <PeriodContainer />
+                {date && <PeriodContainer date={date} setDate={setDate} />}
                 <Button variant="contained" onClick={() => setOpen(!open)}>
                   เพิ่มธรุกรรม
                 </Button>
@@ -116,7 +143,9 @@ const TransactionContainer = () => {
             >
               <DialogTitle>เพิ่มธรุกรรม</DialogTitle>
               <DialogContent>
-                <AddTransactionContainer setOpen={setOpen} />
+                {date && (
+                  <AddTransactionContainer date={date} setOpen={setOpen} />
+                )}
               </DialogContent>
             </Dialog>
           </>

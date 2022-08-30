@@ -1,71 +1,66 @@
-import {
-  Box,
-  ButtonBase,
-  Chip,
-  Divider,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, ButtonBase, Divider, Stack, Typography } from "@mui/material";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { useEffect, useState } from "react";
+import { FunctionComponent, useEffect, useMemo, useState } from "react";
+import { useAppSelector } from "../../app/hooks";
+import { ITransaction } from "../../features/transactions/transactions-slice";
 
-interface ITxn {
+interface ITransactionItemHeaderProps {
   date: string;
-  type: number;
-  note: string;
-  amount: number;
+  value: ITransaction[];
 }
-const TransactionList = () => {
-  const [txnList] = useState<ITxn[]>([
-    {
-      date: "Thu Aug 04 2022 16:40:26 GMT+0700 (Indochina Time)",
-      type: 2,
-      note: "adsdsdds",
-      amount: 100,
-    },
-    {
-      date: "Thu Aug 04 2022 16:40:26 GMT+0700 (Indochina Time)",
-      type: 2,
-      note: "ddd",
-      amount: 300,
-    },
-    {
-      date: "Thu Aug 04 2022 16:40:26 GMT+0700 (Indochina Time)",
-      type: 1,
-      note: "dsdsccccc",
-      amount: 150,
-    },
-    {
-      date: "Thu Aug 03 2022 16:40:26 GMT+0700 (Indochina Time)",
-      type: 1,
-      note: "adsdsdds",
-      amount: 100,
-    },
-    {
-      date: "Thu Aug 02 2022 16:40:26 GMT+0700 (Indochina Time)",
-      type: 1,
-      note: "adsdsdds",
-      amount: 100,
-    },
-    {
-      date: "Thu Aug 01 2022 16:40:26 GMT+0700 (Indochina Time)",
-      type: 1,
-      note: "adsdsdds",
-      amount: 100,
-    },
-  ]);
 
-  const [txnMap, setTxnMap] = useState<Map<string, ITxn[]>>(new Map());
+const TransactionItemHeader: FunctionComponent<ITransactionItemHeaderProps> = ({
+  date,
+  value,
+}) => {
+  const total = useMemo(
+    () =>
+      value
+        .map((t) => (t.type === 1 ? t.amount : t.amount * -1))
+        .reduce((prev, cur) => prev + cur, 0),
+    [value]
+  );
+
+  return (
+    <Stack
+      direction={"row"}
+      justifyContent="space-between"
+      alignItems={"center"}
+      mb={1}
+      p={1}
+    >
+      <Typography variant="body1">{date}</Typography>
+      <Typography variant="body1" color={total >= 0 ? "#4BBEEA" : "error"}>
+        {total.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}
+      </Typography>
+    </Stack>
+  );
+};
+
+const TransactionList: FunctionComponent = () => {
+  const { transactions: txnList } = useAppSelector((state) => state.txn);
+  const categories = useAppSelector((state) => state.categories.categories);
+
+  const [txnMap, setTxnMap] = useState<Map<string, ITransaction[]>>(new Map());
+
+  const getCategory = (categoryId: string) => {
+    return categories.find((c) => c.id === categoryId);
+  };
 
   useEffect(() => {
     if (!Array.isArray(txnList)) {
       return;
     }
-    const map = new Map<string, ITxn[]>();
+    const map = new Map<string, ITransaction[]>();
     for (let i = 0; i < txnList.length; i++) {
       const t = txnList[i];
-      const date = format(new Date(t.date), "dd MMM yyyy", { locale: th });
+      const date = format(new Date(t.displayDate), "dd MMM yyyy", {
+        locale: th,
+      });
       const list = map.get(date) || [];
       list.push(t);
       map.set(date, list);
@@ -76,6 +71,11 @@ const TransactionList = () => {
 
   return (
     <Stack spacing={2} mt={2}>
+      {txnMap.size === 0 && (
+        <Typography variant="body1" textAlign="center">
+          ไม่มีรายการธุระกรรมภายในเดือนนี้
+        </Typography>
+      )}
       {Array.from(txnMap, ([key, value]) => (
         <Box
           key={key}
@@ -86,24 +86,7 @@ const TransactionList = () => {
             boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
           }}
         >
-          <Stack
-            direction={"row"}
-            justifyContent="space-between"
-            alignItems={"center"}
-            mb={1}
-            p={1}
-          >
-            <Typography variant="body1"> {key}</Typography>
-            <Typography variant="body1">
-              {value
-                .map((t) => (t.type === 1 ? t.amount : t.amount * -1))
-                .reduce((prev, cur) => prev + cur, 0)
-                .toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-            </Typography>
-          </Stack>
+          <TransactionItemHeader date={key} value={value} />
           <Divider />
           {value.map((txn, index) => (
             <Box key={index} mt={1}>
@@ -118,26 +101,18 @@ const TransactionList = () => {
                   <Box
                     sx={{
                       borderRadius: "100%",
-                      bgcolor: "teal",
+                      bgcolor: getCategory(txn.categoryId)?.color ?? "grey",
                       height: "24px",
                       width: "24px",
                     }}
                   />
                   <Stack flexGrow={1} spacing={0.25} textAlign="left">
-                    <Typography variant="body1">{txn.note}</Typography>
+                    <Typography variant="body1">
+                      {getCategory(txn.categoryId)?.name || ""}
+                    </Typography>
                     <Typography variant="body2" sx={{ color: "gray" }}>
                       {txn.note}
                     </Typography>
-                    <Stack
-                      direction={"row"}
-                      spacing={1}
-                      alignContent={"center"}
-                      sx={{ minHeight: "24px" }}
-                    >
-                      {/* TODO: Loop through label */}
-                      <Chip label={txn.note} size="small" />
-                      <Chip label={txn.note} size="small" />
-                    </Stack>
                   </Stack>
                   <Typography
                     variant="body1"

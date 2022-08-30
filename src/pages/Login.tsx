@@ -13,8 +13,10 @@ import { useFormik } from "formik";
 import * as yup from "yup";
 import { auth, signInWithGoogle } from "../firebase";
 import { FirebaseError } from "firebase/app";
+import { useMounted } from "../hooks";
 
 const Login = () => {
+  const mounted = useMounted();
   const [isLoading, setLoading] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -73,6 +75,10 @@ const Login = () => {
       handleOnSubmit(email, password);
     },
   });
+
+  if (mounted.current) {
+    return <></>;
+  }
 
   return (
     <React.Fragment>

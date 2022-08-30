@@ -9,7 +9,7 @@ import walletsSlice from "../features/wallets/wallets-slice";
 
 export const store = configureStore({
   reducer: {
-    transactions: txnSlice,
+    txn: txnSlice,
     categories: categorySlice,
     walletState: walletsSlice,
     dialog: dialogSlice,
