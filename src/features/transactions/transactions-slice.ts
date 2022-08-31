@@ -131,36 +131,45 @@ export const createTransaction = createAsyncThunk<
   await batch.commit();
 });
 
-export const updateTransaction = createAsyncThunk<
-  void,
-  ITransaction & { wallet: IWallet; changed: number }
->("transactions/updateTransaction", async (args) => {
-  const { id, amount, note, categoryId, type, displayDate, wallet, changed } =
-    args;
-  const batch = writeBatch(db);
-  batch.update(doc(transactionRef, id), {
-    amount,
-    note,
-    categoryId,
-    type,
-    displayDate: Timestamp.fromDate(new Date(displayDate)),
-    updateAt: serverTimestamp(),
-  });
-  batch.update(doc(walletRef, wallet.id), {
-    balance: wallet.balance + changed,
-    updateAt: serverTimestamp(),
-  });
-  await batch.commit();
-});
+interface IUpdateTransaction {
+  id: string;
+  amount: number;
+  note: string;
+  categoryId: string;
+  type: number;
+  date: Date;
+  wallet: IWallet;
+  changed: number;
+}
+export const updateTransaction = createAsyncThunk<void, IUpdateTransaction>(
+  "transactions/updateTransaction",
+  async (args) => {
+    const { id, amount, note, categoryId, type, date, wallet, changed } = args;
+    const batch = writeBatch(db);
+    batch.update(doc(transactionRef, id), {
+      amount,
+      note,
+      categoryId,
+      type,
+      displayDate: Timestamp.fromDate(date),
+      updateAt: serverTimestamp(),
+    });
+    batch.update(doc(walletRef, wallet.id), {
+      balance: changed,
+      updateAt: serverTimestamp(),
+    });
+    await batch.commit();
+  }
+);
 
 export const deleteTransaction = createAsyncThunk<
   void,
-  { txnId: string; txnAmount: number; wallet: IWallet }
->("transactions/deleteTransaction", async ({ txnId, txnAmount, wallet }) => {
+  { txnId: string; balance: number; wallet: IWallet }
+>("transactions/deleteTransaction", async ({ txnId, balance, wallet }) => {
   const batch = writeBatch(db);
   batch.delete(doc(transactionRef, txnId));
   batch.update(doc(walletRef, wallet.id), {
-    balance: wallet.balance - txnAmount,
+    balance: balance,
     updateAt: serverTimestamp(),
   });
   await batch.commit();

@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
   getDocs,
   orderBy,
@@ -88,7 +88,11 @@ const initialState: {
 const categorySlice = createSlice({
   name: "category",
   initialState,
-  reducers: {},
+  reducers: {
+    setCategories: (state, action: PayloadAction<ICategory[]>) => {
+      state.categories = action.payload;
+    },
+  },
   extraReducers(builder) {
     builder
       .addCase(fetchCategories.fulfilled, (state, action) => {
@@ -100,4 +104,5 @@ const categorySlice = createSlice({
   },
 });
 
+export const { setCategories } = categorySlice.actions;
 export default categorySlice.reducer;

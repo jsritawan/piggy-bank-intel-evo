@@ -60,7 +60,7 @@ const TransactionHeader = () => {
   });
 
   useEffect(() => {
-    dispatch(setDefaultWallet(wallets.find((w) => w.default)));
+    dispatch(setDefaultWallet(wallets.find((w) => w.isDefault)));
   }, [wallets, dispatch]);
 
   useEffect(() => {
@@ -101,11 +101,11 @@ const TransactionHeader = () => {
               <BalanceCard
                 title="รายจ่าย"
                 balance={detail.expense}
-                color="error"
+                color={detail.expense === 0 ? "#4BBEEA" : "error"}
               />
             </Grid>
             <Grid md={3} xs={6} item>
-              <BalanceCard title="คงเหลือ" balance={detail.total} />
+              <BalanceCard title="เปลี่ยนแปลง" balance={detail.total} />
             </Grid>
           </Grid>
         )}

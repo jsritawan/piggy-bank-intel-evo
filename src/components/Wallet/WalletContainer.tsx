@@ -41,26 +41,26 @@ const WalletContainer = () => {
 
     if (oldDefaultId) {
       batch.update(doc(walletRef, oldDefaultId), {
-        default: false,
+        isDefault: false,
         updateAt: serverTimestamp(),
       });
     }
 
     batch.update(doc(walletRef, newDefaultId), {
-      default: true,
+      isDefault: true,
       updateAt: serverTimestamp(),
     });
 
     batch.commit().then(() => {
       getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
         const wallets: IWallet[] = snapshot.docs.map((d) => {
-          const { balance, name, createAt, updateAt } = d.data();
+          const { balance, name, createAt, updateAt, isDefault } = d.data();
           return {
             id: d.id,
             uid,
             balance,
             name,
-            default: d.data().default,
+            isDefault: isDefault,
             createAt: createAt
               ? (createAt as Timestamp).toDate().toString()
               : "",
@@ -77,7 +77,7 @@ const WalletContainer = () => {
   };
 
   useEffect(() => {
-    const wallet = wallets.find((w) => w.default);
+    const wallet = wallets.find((w) => w.isDefault);
     if (wallet) {
       setSelectedWallet(wallet);
     }
@@ -140,7 +140,7 @@ const WalletContainer = () => {
                       bgcolor: "#fff",
                       borderStyle: "solid",
                       borderWidth: "2px",
-                      borderColor: w.default
+                      borderColor: w.isDefault
                         ? alpha("#0BA5E1", 0.4)
                         : "transparent",
                       boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",

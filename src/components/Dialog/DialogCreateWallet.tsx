@@ -18,11 +18,11 @@ import {
   getDocs,
   query,
   serverTimestamp,
-  setDoc,
   Timestamp,
   where,
+  writeBatch,
 } from "firebase/firestore";
-import { walletRef } from "../../firebase";
+import { db, walletRef } from "../../firebase";
 import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
 
 const validationSchema = yup.object().shape({
@@ -31,9 +31,10 @@ const validationSchema = yup.object().shape({
 });
 
 const DialogCreateWallet = () => {
+  const dispatch = useAppDispatch();
   const openDialog = useAppSelector((state) => state.dialog.openCreateWallet);
   const { uid } = useAppSelector((state) => state.auth.user);
-  const dispatch = useAppDispatch();
+  const wallets = useAppSelector((state) => state.walletState.wallets);
 
   const formik = useFormik({
     initialValues: {
@@ -41,41 +42,52 @@ const DialogCreateWallet = () => {
       balance: "0",
     },
     validationSchema,
-    onSubmit: function ({ name, balance }, formikHelpers) {
-      setDoc(doc(walletRef), {
+    onSubmit: async function ({ name, balance }, formikHelpers) {
+      const batch = writeBatch(db);
+
+      batch.set(doc(walletRef), {
         uid,
         name: name,
         balance: +balance,
-        default: true,
+        isDefault: true,
         createAt: serverTimestamp(),
         updateAt: serverTimestamp(),
-      }).then(() => {
-        if (uid) {
-          getDocs(query(walletRef, where("uid", "==", uid))).then(
-            (snapshot) => {
-              const wallets: IWallet[] = snapshot.docs.map((d) => {
-                const { balance, name, createAt, updateAt } = d.data();
-                return {
-                  id: d.id,
-                  uid,
-                  balance,
-                  name,
-                  default: d.data().default,
-                  createAt: createAt
-                    ? (createAt as Timestamp).toDate().toString()
-                    : "",
-                  updateAt: updateAt
-                    ? (updateAt as Timestamp).toDate().toString()
-                    : "",
-                };
-              });
-              dispatch(setWallets(wallets));
-            }
-          );
-        }
-        dispatch(toggleDialog("openCreateWallet"));
-        formikHelpers.resetForm();
       });
+
+      wallets
+        .filter((w) => w.isDefault)
+        .forEach((w) => {
+          batch.update(doc(walletRef, w.id), {
+            isDefault: false,
+            updateAt: serverTimestamp(),
+          });
+        });
+
+      await batch.commit();
+
+      if (uid) {
+        getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
+          const newWallets: IWallet[] = snapshot.docs.map((d) => {
+            const { balance, name, createAt, updateAt, isDefault } = d.data();
+            return {
+              id: d.id,
+              uid,
+              balance,
+              name,
+              isDefault: isDefault,
+              createAt: createAt
+                ? (createAt as Timestamp).toDate().toString()
+                : "",
+              updateAt: updateAt
+                ? (updateAt as Timestamp).toDate().toString()
+                : "",
+            };
+          });
+          dispatch(setWallets(newWallets));
+        });
+      }
+      dispatch(toggleDialog("openCreateWallet"));
+      formikHelpers.resetForm();
     },
   });
 

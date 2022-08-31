@@ -10,12 +10,14 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { useFormik } from "formik";
-import React, {
+import {
   Dispatch,
   FunctionComponent,
   MouseEvent,
   SetStateAction,
   useCallback,
+  useEffect,
+  useMemo,
   useState,
 } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -27,8 +29,11 @@ import { th } from "date-fns/locale";
 import {
   createTransaction,
   fetchTransaction,
+  ITransaction,
+  updateTransaction,
 } from "../../features/transactions/transactions-slice";
 import { isEmpty } from "lodash";
+import { updateWalletBalance } from "../../features/wallets/wallets-slice";
 
 const validationSchema = yup.object().shape({
   categoryId: yup.string().required("กรุณาเลือกหมวดหมู่"),
@@ -48,31 +53,86 @@ interface TransactionForm {
 interface IProps {
   date: Date;
   setOpen: Dispatch<SetStateAction<boolean>>;
+  transaction?: ITransaction;
+  disabled?: boolean;
 }
 const AddTransactionContainer: FunctionComponent<IProps> = ({
   setOpen,
   date,
+  transaction,
+  disabled,
 }) => {
   const dispatch = useAppDispatch();
   const categories = useAppSelector((state) => state.categories.categories);
   const { uid } = useAppSelector((state) => state.auth.user);
   const wallet = useAppSelector((state) => state.walletState.defaultWallet);
-  const [txnType, setTxnType] = useState<number>(2);
+  const [txnType, setTxnType] = useState<number>(transaction?.type ?? 2);
   const [openCalendar, setOpenCalendar] = useState(false);
   const [preventOnClose, setPreventOnClose] = useState(false);
   const [isLoading, setLoading] = useState(false);
+
+  const filteredCategories = useMemo(
+    () => categories.filter((cat) => cat.type === txnType),
+    [categories, txnType]
+  );
 
   const roundAmount = useCallback((num: number) => {
     return Number((Math.round(num * 100) / 100).toFixed(2));
   }, []);
 
-  const initialValues: TransactionForm = {
-    amount: 0,
-    categoryId: "",
-    note: "",
-    date: new Date(),
-    type: txnType,
+  const calculateChange = (params: {
+    oldType: number;
+    newType: number;
+    oldAmount: number;
+    newAmount: number;
+    balance: number;
+  }): number => {
+    const { oldAmount, newAmount, oldType, newType, balance } = params;
+    if (oldAmount === newAmount && oldType === newType) {
+      return 0;
+    }
+
+    const INCOME = 1;
+    const EXPENSE = 2;
+    // same type
+    if (newType === oldType) {
+      // console.log({ balance, oldAmount, newAmount });
+
+      if (newType === INCOME) {
+        return balance - oldAmount + newAmount;
+      }
+      return balance + oldAmount - newAmount;
+    }
+    // ex -> inc
+    if (oldType === EXPENSE && newType === INCOME) {
+      return balance + (newAmount - oldAmount + oldAmount * 2);
+    }
+    // inc -> ex
+    if (oldType === INCOME && newType === EXPENSE) {
+      return balance - (oldAmount - newAmount + newAmount * 2);
+    }
+
+    return 0;
   };
+
+  const initialValues: TransactionForm = useMemo(() => {
+    if (transaction) {
+      return {
+        amount: transaction.amount,
+        categoryId: transaction.categoryId,
+        note: transaction.note ?? "",
+        date: date,
+        type: transaction.type,
+      };
+    }
+    return {
+      amount: 0,
+      categoryId: "",
+      note: "",
+      date: new Date(),
+      type: txnType,
+    };
+  }, [date, transaction, txnType]);
 
   const {
     errors,
@@ -81,35 +141,73 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
     getFieldProps,
     handleSubmit,
     setFieldValue,
+    setTouched,
   } = useFormik({
     initialValues,
     validationSchema,
     onSubmit: async (values, formikHelpers) => {
-      if (isEmpty(uid) || uid === null || wallet === undefined) {
-        return;
+      try {
+        if (isEmpty(uid) || uid === null || wallet === undefined) {
+          return;
+        }
+
+        setLoading(true);
+
+        const { type, amount } = values;
+        let changed = 0;
+
+        if (isEmpty(transaction)) {
+          const createResult = await dispatch(
+            createTransaction({ ...values, uid, wallet })
+          );
+
+          if (!createTransaction.fulfilled.match(createResult)) {
+            return;
+          }
+
+          if (type === 1) {
+            changed = wallet.balance + amount;
+          } else {
+            changed = wallet.balance - amount;
+          }
+        } else {
+          changed = calculateChange({
+            balance: wallet.balance,
+            oldAmount: transaction.amount,
+            newAmount: amount,
+            oldType: transaction.type,
+            newType: type,
+          });
+          console.log(changed, wallet.balance);
+
+          const updateReusult = await dispatch(
+            updateTransaction({
+              ...values,
+              wallet,
+              changed,
+              id: transaction.id,
+            })
+          );
+
+          if (!updateTransaction.fulfilled.match(updateReusult)) {
+            return;
+          }
+        }
+        dispatch(updateWalletBalance(changed));
+
+        await dispatch(fetchTransaction({ date, walletId: wallet.id, uid }));
+
+        if (!preventOnClose) {
+          setOpen(false);
+          return;
+        }
+
+        const { date: prevDate } = values;
+        formikHelpers.resetForm();
+        formikHelpers.setFieldValue("date", prevDate);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(true);
-
-      const createResult = await dispatch(
-        createTransaction({ ...values, uid, wallet })
-      );
-
-      if (!createTransaction.fulfilled.match(createResult)) {
-        return;
-      }
-
-      await dispatch(fetchTransaction({ date, walletId: wallet.id, uid }));
-
-      setLoading(false);
-      if (!preventOnClose) {
-        setOpen(false);
-        return;
-      }
-
-      const { date: prevDate } = values;
-      formikHelpers.resetForm();
-      formikHelpers.setFieldValue("date", prevDate);
     },
   });
 
@@ -118,9 +216,16 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
       setTxnType(newType);
       setFieldValue("categoryId", "");
       setFieldValue("type", newType);
+      setTouched({}, false);
     },
-    [setFieldValue]
+    [setFieldValue, setTouched]
   );
+
+  useEffect(() => {
+    if (transaction) {
+      setTxnType(transaction.type);
+    }
+  }, [transaction]);
 
   return (
     <Box sx={{ borderRadius: 1, bgcolor: "#fff" }}>
@@ -128,10 +233,10 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
         <Grid container spacing={2}>
           <Grid item xs={6}>
             <Button
-              variant={txnType === 2 ? "contained" : "text"}
+              variant={txnType === 2 ? "contained" : "outlined"}
               color="error"
               onClick={onTypeChange(2)}
-              disabled={isLoading}
+              disabled={disabled && isLoading}
               fullWidth
             >
               รายจ่าย
@@ -139,10 +244,10 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
           </Grid>
           <Grid item xs={6}>
             <Button
-              variant={txnType === 1 ? "contained" : "text"}
+              variant={txnType === 1 ? "contained" : "outlined"}
               color="success"
               onClick={onTypeChange(1)}
-              disabled={isLoading}
+              disabled={disabled && isLoading}
               fullWidth
             >
               รายรับ
@@ -180,7 +285,7 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
                     fullWidth
                   />
                 )}
-                disabled={isLoading}
+                disabled={disabled && isLoading}
               />
             </LocalizationProvider>
           </Grid>
@@ -192,42 +297,36 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
               {...getFieldProps("categoryId")}
               error={touched["categoryId"] && !!errors["categoryId"]}
               helperText={touched["categoryId"] && errors["categoryId"]}
-              disabled={isLoading}
+              disabled={disabled && isLoading}
               select
               fullWidth
             >
               <MenuItem value="" disabled>
                 เลือกประเภท
               </MenuItem>
-              {categories
-                .filter((cat) => cat.type === txnType)
-                .map((cat) => (
-                  <MenuItem key={cat.id} value={cat.id}>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      width="100%"
-                      overflow="hidden"
-                    >
-                      <Box
-                        sx={{
-                          height: "24px",
-                          width: "24px",
-                          flex: "0 0 24px",
-                          bgcolor: cat.color,
-                          borderRadius: "100%",
-                        }}
-                      />
-                      <Typography
-                        variant="body1"
-                        noWrap
-                        textOverflow="ellipsis"
-                      >
-                        {cat.name}
-                      </Typography>
-                    </Stack>
-                  </MenuItem>
-                ))}
+              {filteredCategories.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    width="100%"
+                    overflow="hidden"
+                  >
+                    <Box
+                      sx={{
+                        height: "24px",
+                        width: "24px",
+                        flex: "0 0 24px",
+                        bgcolor: c.color,
+                        borderRadius: "100%",
+                      }}
+                    />
+                    <Typography variant="body1" noWrap textOverflow="ellipsis">
+                      {c.name}
+                    </Typography>
+                  </Stack>
+                </MenuItem>
+              ))}
             </TextField>
           </Grid>
 
@@ -237,7 +336,7 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
             </Typography>
             <TextField
               {...getFieldProps("note")}
-              disabled={isLoading}
+              disabled={disabled && isLoading}
               error={touched["note"] && !!errors["note"]}
               helperText={touched["note"] && errors["note"]}
               fullWidth
@@ -254,7 +353,7 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
               onBlur={() =>
                 setFieldValue("amount", roundAmount(values.amount || 0))
               }
-              disabled={isLoading}
+              disabled={disabled && isLoading}
               fullWidth
             />
           </Grid>
@@ -263,7 +362,7 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
               label="เปิดป๊อปอัพไว้หลังเพิ่มธุรกรรม"
               control={
                 <Checkbox
-                  disabled={isLoading}
+                  disabled={disabled && isLoading}
                   color="success"
                   onChange={(e) => setPreventOnClose(e.target.checked)}
                 />
@@ -274,7 +373,7 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
             <Button
               variant="text"
               onClick={() => setOpen(false)}
-              disabled={isLoading}
+              disabled={disabled && isLoading}
             >
               ยกเลิก
             </Button>
@@ -282,7 +381,7 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
               type="submit"
               variant="contained"
               sx={{ ml: 2 }}
-              disabled={isLoading}
+              disabled={disabled && isLoading}
             >
               บันทึก
             </Button>

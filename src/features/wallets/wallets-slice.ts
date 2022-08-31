@@ -5,7 +5,7 @@ export interface IWallet {
   uid: string | null;
   balance: number;
   name: string;
-  default?: boolean;
+  isDefault?: boolean;
   createAt: string;
   updateAt: string;
 }
@@ -29,8 +29,14 @@ const walletsSlice = createSlice({
     setDefaultWallet: (state, action: PayloadAction<IWallet | undefined>) => {
       state.defaultWallet = action.payload;
     },
+    updateWalletBalance: function (state, action: PayloadAction<number>) {
+      if (state.defaultWallet) {
+        state.defaultWallet.balance = action.payload;
+      }
+    },
   },
 });
 
-export const { setWallets, setDefaultWallet } = walletsSlice.actions;
+export const { setWallets, setDefaultWallet, updateWalletBalance } =
+  walletsSlice.actions;
 export default walletsSlice.reducer;

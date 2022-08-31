@@ -11,6 +11,9 @@ import { onAuthStateChanged } from "firebase/auth";
 import { updateUserAuth } from "./features/auth/auth-slice";
 import { auth } from "./firebase";
 import { useAppDispatch } from "./app/hooks";
+import { setTransactions } from "./features/transactions/transactions-slice";
+import { setCategories } from "./features/category/category-slice";
+import { setDefaultWallet, setWallets } from "./features/wallets/wallets-slice";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -30,6 +33,10 @@ function App() {
             authenticated: false,
           })
         );
+        dispatch(setTransactions([]));
+        dispatch(setCategories([]));
+        dispatch(setWallets([]));
+        dispatch(setDefaultWallet(undefined));
         navigate("/login");
       } else {
         dispatch(

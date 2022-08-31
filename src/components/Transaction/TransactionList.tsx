@@ -1,9 +1,32 @@
-import { Box, ButtonBase, Divider, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  ButtonBase,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import { FunctionComponent, useEffect, useMemo, useState } from "react";
-import { useAppSelector } from "../../app/hooks";
-import { ITransaction } from "../../features/transactions/transactions-slice";
+import {
+  FunctionComponent,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import {
+  deleteTransaction,
+  fetchTransaction,
+  ITransaction,
+} from "../../features/transactions/transactions-slice";
+import { updateWalletBalance } from "../../features/wallets/wallets-slice";
+import AddTransactionContainer from "../AddTransaction/AddTransactionContainer";
 
 interface ITransactionItemHeaderProps {
   date: string;
@@ -42,14 +65,61 @@ const TransactionItemHeader: FunctionComponent<ITransactionItemHeaderProps> = ({
 };
 
 const TransactionList: FunctionComponent = () => {
+  const dispatch = useAppDispatch();
+
   const { transactions: txnList } = useAppSelector((state) => state.txn);
   const categories = useAppSelector((state) => state.categories.categories);
+  const wallet = useAppSelector((state) => state.walletState.defaultWallet);
 
   const [txnMap, setTxnMap] = useState<Map<string, ITransaction[]>>(new Map());
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [transaction, setTransaction] = useState<ITransaction>();
+  const [isDeleting, setDeleting] = useState(false);
 
   const getCategory = (categoryId: string) => {
     return categories.find((c) => c.id === categoryId);
   };
+  const handleOnClickTxn = useCallback(
+    (txn: ITransaction) => (_e: MouseEvent<HTMLButtonElement>) => {
+      setOpenEditDialog(true);
+      setTransaction(txn);
+    },
+    []
+  );
+  const handleDeleteTxn = useCallback(async () => {
+    if (!transaction || !wallet || !openEditDialog) {
+      return;
+    }
+
+    setDeleting(true);
+    const { type, amount } = transaction;
+    const changed = type === 1 ? amount * -1 : amount;
+    const balance = wallet.balance + changed;
+    const deleteResult = await dispatch(
+      deleteTransaction({
+        txnId: transaction.id,
+        balance: balance,
+        wallet: wallet,
+      })
+    );
+
+    if (!deleteTransaction.fulfilled.match(deleteResult)) {
+      return;
+    }
+
+    setDeleting(false);
+    setOpenEditDialog(false);
+
+    dispatch(updateWalletBalance(balance));
+
+    await dispatch(
+      fetchTransaction({
+        date: new Date(transaction.displayDate),
+        walletId: wallet.id,
+        uid: transaction.uid,
+      })
+    );
+  }, [dispatch, openEditDialog, transaction, wallet]);
 
   useEffect(() => {
     if (!Array.isArray(txnList)) {
@@ -96,6 +166,7 @@ const TransactionList: FunctionComponent = () => {
                   borderRadius: 1,
                   p: 1,
                 }}
+                onClick={handleOnClickTxn(txn)}
               >
                 <Stack direction={"row"} spacing={2} sx={{ width: "100%" }}>
                   <Box
@@ -129,6 +200,34 @@ const TransactionList: FunctionComponent = () => {
           ))}
         </Box>
       ))}
+
+      <Dialog
+        open={openEditDialog}
+        onClose={() => {
+          setOpenEditDialog(false);
+        }}
+      >
+        <DialogTitle
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Typography variant="body1">แก้ไขธรุกรรม</Typography>
+          <Button color="error" onClick={handleDeleteTxn}>
+            ลบ
+          </Button>
+        </DialogTitle>
+        <DialogContent>
+          {transaction && (
+            <AddTransactionContainer
+              date={new Date(transaction.displayDate)}
+              transaction={transaction}
+              setOpen={setOpenEditDialog}
+              disabled={isDeleting}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Stack>
   );
 };

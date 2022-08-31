@@ -2,6 +2,7 @@ import { DeleteRounded, WarningAmberRounded } from "@mui/icons-material";
 import {
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -24,17 +25,17 @@ import {
   query,
   where,
   Timestamp,
-  deleteDoc,
   doc,
   updateDoc,
   serverTimestamp,
+  writeBatch,
 } from "firebase/firestore";
 import { cloneDeep } from "lodash";
 import { FormEvent, MouseEvent, useCallback, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
 import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
-import { transactionRef, walletRef } from "../../firebase";
+import { db, transactionRef, walletRef } from "../../firebase";
 
 const SettingWallet = () => {
   const theme = useTheme();
@@ -78,29 +79,40 @@ const SettingWallet = () => {
     };
 
   const handleConfirmDelete = async () => {
-    if (selectedWallet) {
-      await deleteDoc(doc(walletRef, selectedWallet.id));
+    if (!selectedWallet) {
+      return;
+    }
 
-      const snapshot = await getDocs(
-        query(
-          transactionRef,
-          where("uid", "==", uid),
-          where("walletId", "==", selectedWallet.id),
-          where("deleted", "!=", true)
-        )
-      );
+    const batch = writeBatch(db);
+    batch.delete(doc(walletRef, selectedWallet.id));
+    if (selectedWallet.isDefault && wallets.length > 2) {
+      const firstWallet = wallets.filter((w) => w.id !== selectedWallet.id)[0];
+      batch.update(doc(walletRef, firstWallet.id), {
+        isDefault: true,
+        updateAt: serverTimestamp(),
+      });
+    }
+    await batch.commit();
 
-      for (let document of snapshot.docs) {
-        updateDoc(doc(transactionRef, document.id), {
-          deleted: true,
-        }).catch((error) => console.error(error));
-      }
+    const snapshot = await getDocs(
+      query(
+        transactionRef,
+        where("uid", "==", uid),
+        where("walletId", "==", selectedWallet.id),
+        where("deleted", "!=", true)
+      )
+    );
 
-      setOpenConfirmDialog(false);
-      setSelectedWallet(null);
-      if (uid) {
-        fetchWallets(uid);
-      }
+    for (let document of snapshot.docs) {
+      updateDoc(doc(transactionRef, document.id), {
+        deleted: true,
+      }).catch((error) => console.error(error));
+    }
+
+    setOpenConfirmDialog(false);
+    setSelectedWallet(null);
+    if (uid) {
+      fetchWallets(uid);
     }
   };
 
@@ -113,13 +125,13 @@ const SettingWallet = () => {
     (uid: string) => {
       getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
         const wallets: IWallet[] = snapshot.docs.map((d) => {
-          const { balance, name, createAt, updateAt } = d.data();
+          const { balance, name, createAt, updateAt, isDefault } = d.data();
           return {
             id: d.id,
             uid,
             balance,
             name,
-            default: d.data().default,
+            isDefault: isDefault,
             createAt: createAt
               ? (createAt as Timestamp).toDate().toString()
               : "",
@@ -187,6 +199,15 @@ const SettingWallet = () => {
           >
             <ListItemText secondary={wallet.balance}>
               {wallet.name}
+              {wallet.isDefault && (
+                <Chip
+                  label="default"
+                  variant="outlined"
+                  size="small"
+                  color="primary"
+                  sx={{ ml: 1 }}
+                />
+              )}
             </ListItemText>
             <ListItemAvatar
               sx={{
