@@ -30,7 +30,7 @@ import {
   serverTimestamp,
   writeBatch,
 } from "firebase/firestore";
-import { cloneDeep } from "lodash";
+import { chunk, cloneDeep } from "lodash";
 import { FormEvent, MouseEvent, useCallback, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
@@ -48,21 +48,27 @@ const SettingWallet = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [mouseOverItemId, setMouseOverItemId] = useState<string>();
+  const [disabled, setDisabled] = useState(false);
 
-  const handleOnSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleOnSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (selectedWallet) {
+    if (!selectedWallet || !uid) {
+      return;
+    }
+
+    try {
+      setDisabled(true);
+
       const { id, name } = selectedWallet;
-      updateDoc(doc(walletRef, id), {
+      await updateDoc(doc(walletRef, id), {
         name,
         updateAt: serverTimestamp(),
-      }).then(() => {
-        setOpenDialog(false);
-        setSelectedWallet(null);
-        if (uid) {
-          fetchWallets(uid);
-        }
       });
+      setOpenDialog(false);
+      setSelectedWallet(null);
+      fetchWallets(uid);
+    } finally {
+      setDisabled(false);
     }
   };
 
@@ -79,40 +85,50 @@ const SettingWallet = () => {
     };
 
   const handleConfirmDelete = async () => {
-    if (!selectedWallet) {
-      return;
-    }
+    try {
+      if (!selectedWallet || !uid) {
+        return;
+      }
+      setDisabled(true);
 
-    const batch = writeBatch(db);
-    batch.delete(doc(walletRef, selectedWallet.id));
-    if (selectedWallet.isDefault && wallets.length > 2) {
-      const firstWallet = wallets.filter((w) => w.id !== selectedWallet.id)[0];
-      batch.update(doc(walletRef, firstWallet.id), {
-        isDefault: true,
-        updateAt: serverTimestamp(),
-      });
-    }
-    await batch.commit();
+      const txnSnapshot = await getDocs(
+        query(
+          transactionRef,
+          where("uid", "==", uid),
+          where("walletId", "==", selectedWallet.id)
+        )
+      );
 
-    const snapshot = await getDocs(
-      query(
-        transactionRef,
-        where("uid", "==", uid),
-        where("walletId", "==", selectedWallet.id),
-        where("deleted", "!=", true)
-      )
-    );
+      const MAX_TRANSACTION_WRITES = 500;
+      const batchPool = chunk(txnSnapshot.docs, MAX_TRANSACTION_WRITES).map(
+        (txnDocs) => {
+          const wb = writeBatch(db);
+          for (let txnDoc of txnDocs) {
+            wb.delete(doc(transactionRef, txnDoc.id));
+          }
+          return wb.commit();
+        }
+      );
+      const batch = writeBatch(db);
+      if (selectedWallet.isDefault && wallets.length >= 2) {
+        const firstWallet = wallets.filter(
+          (w) => w.id !== selectedWallet.id
+        )[0];
+        batch.update(doc(walletRef, firstWallet.id), {
+          isDefault: true,
+          updateAt: serverTimestamp(),
+        });
+      }
+      batch.delete(doc(walletRef, selectedWallet.id));
+      batchPool.push(batch.commit());
 
-    for (let document of snapshot.docs) {
-      updateDoc(doc(transactionRef, document.id), {
-        deleted: true,
-      }).catch((error) => console.error(error));
-    }
+      await Promise.all(batchPool);
+      setOpenConfirmDialog(false);
+      setSelectedWallet(null);
 
-    setOpenConfirmDialog(false);
-    setSelectedWallet(null);
-    if (uid) {
       fetchWallets(uid);
+    } finally {
+      setDisabled(false);
     }
   };
 
@@ -122,26 +138,21 @@ const SettingWallet = () => {
   };
 
   const fetchWallets = useCallback(
-    (uid: string) => {
-      getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
-        const wallets: IWallet[] = snapshot.docs.map((d) => {
-          const { balance, name, createAt, updateAt, isDefault } = d.data();
-          return {
-            id: d.id,
-            uid,
-            balance,
-            name,
-            isDefault: isDefault,
-            createAt: createAt
-              ? (createAt as Timestamp).toDate().toString()
-              : "",
-            updateAt: updateAt
-              ? (updateAt as Timestamp).toDate().toString()
-              : "",
-          };
-        });
-        dispatch(setWallets(wallets));
+    async (uid: string) => {
+      const snapshot = await getDocs(query(walletRef, where("uid", "==", uid)));
+      const wallets: IWallet[] = snapshot.docs.map((d) => {
+        const { balance, name, createAt, updateAt, isDefault } = d.data();
+        return {
+          id: d.id,
+          uid,
+          balance,
+          name,
+          isDefault: isDefault,
+          createAt: createAt ? (createAt as Timestamp).toDate().toString() : "",
+          updateAt: updateAt ? (updateAt as Timestamp).toDate().toString() : "",
+        };
       });
+      dispatch(setWallets(wallets));
     },
     [dispatch]
   );
@@ -196,6 +207,7 @@ const SettingWallet = () => {
             }}
             onMouseEnter={() => setMouseOverItemId(wallet.id)}
             onMouseLeave={() => setMouseOverItemId(undefined)}
+            disabled={disabled}
           >
             <ListItemText secondary={wallet.balance}>
               {wallet.name}
@@ -217,7 +229,7 @@ const SettingWallet = () => {
               }}
             >
               {wallet.id === mouseOverItemId && (
-                <IconButton onClick={onClickDelete(wallet)}>
+                <IconButton onClick={onClickDelete(wallet)} disabled={disabled}>
                   <DeleteRounded color="error" />
                 </IconButton>
               )}
@@ -241,12 +253,15 @@ const SettingWallet = () => {
                     setSelectedWallet(newWallet);
                   }}
                   required
+                  disabled={disabled}
                 />
               )}
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseDialog}>ยกเลิก</Button>
-              <Button variant="contained" type="submit">
+              <Button onClick={handleCloseDialog} disabled={disabled}>
+                ยกเลิก
+              </Button>
+              <Button variant="contained" type="submit" disabled={disabled}>
                 ยืนยัน
               </Button>
             </DialogActions>
@@ -268,10 +283,18 @@ const SettingWallet = () => {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleConfirmDialogClose} variant="contained">
+            <Button
+              onClick={handleConfirmDialogClose}
+              variant="contained"
+              disabled={disabled}
+            >
               ยกเลิก
             </Button>
-            <Button onClick={handleConfirmDelete} color="error">
+            <Button
+              onClick={handleConfirmDelete}
+              color="error"
+              disabled={disabled}
+            >
               ยืนยัน
             </Button>
           </DialogActions>

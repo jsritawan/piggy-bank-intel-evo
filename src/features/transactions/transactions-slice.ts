@@ -18,6 +18,7 @@ import { IWallet } from "../wallets/wallets-slice";
 export interface ITransaction {
   id: string;
   uid: string;
+  walletId: string;
   amount: number;
   note?: string;
   categoryId: string;
@@ -67,8 +68,16 @@ export const fetchTransaction = createAsyncThunk<
 
   return snapshot.docs.map((doc): ITransaction => {
     const data = doc.data();
-    const { amount, note, categoryId, type, displayDate, createAt, updateAt } =
-      data;
+    const {
+      amount,
+      note,
+      categoryId,
+      type,
+      walletId,
+      displayDate,
+      createAt,
+      updateAt,
+    } = data;
 
     const convertToTimestamp = (date: any) => {
       return (date as Timestamp).toDate().getTime();
@@ -81,6 +90,7 @@ export const fetchTransaction = createAsyncThunk<
       note,
       categoryId,
       type,
+      walletId,
       displayDate: convertToTimestamp(displayDate),
       createAt: convertToTimestamp(createAt),
       updateAt: convertToTimestamp(updateAt),
@@ -167,11 +177,11 @@ export const deleteTransaction = createAsyncThunk<
   { txnId: string; balance: number; wallet: IWallet }
 >("transactions/deleteTransaction", async ({ txnId, balance, wallet }) => {
   const batch = writeBatch(db);
-  batch.delete(doc(transactionRef, txnId));
   batch.update(doc(walletRef, wallet.id), {
     balance: balance,
     updateAt: serverTimestamp(),
   });
+  batch.delete(doc(transactionRef, txnId));
   await batch.commit();
 });
 

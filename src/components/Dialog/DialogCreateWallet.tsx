@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleDialog } from "../../features/dialog/dialog-slice";
 import * as yup from "yup";
 import { useFormik } from "formik";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   doc,
   getDocs,
@@ -35,6 +35,7 @@ const DialogCreateWallet = () => {
   const openDialog = useAppSelector((state) => state.dialog.openCreateWallet);
   const { uid } = useAppSelector((state) => state.auth.user);
   const wallets = useAppSelector((state) => state.walletState.wallets);
+  const [isLoading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: {
@@ -43,31 +44,35 @@ const DialogCreateWallet = () => {
     },
     validationSchema,
     onSubmit: async function ({ name, balance }, formikHelpers) {
-      const batch = writeBatch(db);
+      try {
+        setLoading(true);
 
-      batch.set(doc(walletRef), {
-        uid,
-        name: name,
-        balance: +balance,
-        isDefault: true,
-        createAt: serverTimestamp(),
-        updateAt: serverTimestamp(),
-      });
-
-      wallets
-        .filter((w) => w.isDefault)
-        .forEach((w) => {
-          batch.update(doc(walletRef, w.id), {
-            isDefault: false,
-            updateAt: serverTimestamp(),
-          });
+        const batch = writeBatch(db);
+        batch.set(doc(walletRef), {
+          uid,
+          name: name,
+          balance: +balance,
+          isDefault: true,
+          createAt: serverTimestamp(),
+          updateAt: serverTimestamp(),
         });
 
-      await batch.commit();
+        wallets
+          .filter((w) => w.isDefault)
+          .forEach((w) => {
+            batch.update(doc(walletRef, w.id), {
+              isDefault: false,
+              updateAt: serverTimestamp(),
+            });
+          });
 
-      if (uid) {
-        getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
-          const newWallets: IWallet[] = snapshot.docs.map((d) => {
+        await batch.commit();
+
+        if (uid) {
+          const walletSnapshot = await getDocs(
+            query(walletRef, where("uid", "==", uid))
+          );
+          const wallets: IWallet[] = walletSnapshot.docs.map((d) => {
             const { balance, name, createAt, updateAt, isDefault } = d.data();
             return {
               id: d.id,
@@ -83,11 +88,13 @@ const DialogCreateWallet = () => {
                 : "",
             };
           });
-          dispatch(setWallets(newWallets));
-        });
+          dispatch(setWallets(wallets));
+        }
+        dispatch(toggleDialog("openCreateWallet"));
+        formikHelpers.resetForm();
+      } finally {
+        setLoading(false);
       }
-      dispatch(toggleDialog("openCreateWallet"));
-      formikHelpers.resetForm();
     },
   });
 
@@ -117,6 +124,7 @@ const DialogCreateWallet = () => {
                   placeholder="ชื่อกระเป๋าสตางค์"
                   error={formik.touched["name"] && !!formik.errors["name"]}
                   helperText={formik.touched["name"] && formik.errors["name"]}
+                  disabled={isLoading}
                 />
 
                 <Typography component="label">จำนวนเงิน</Typography>
@@ -135,14 +143,19 @@ const DialogCreateWallet = () => {
                       Number(formik.values.balance || "0").toFixed(2)
                     )
                   }
+                  disabled={isLoading}
                 />
               </Stack>
             </DialogContent>
             <DialogActions sx={{ p: "16px 24px" }}>
-              <Button variant="outlined" onClick={handleOnClose}>
+              <Button
+                variant="outlined"
+                onClick={handleOnClose}
+                disabled={isLoading}
+              >
                 ยกเลิก
               </Button>
-              <Button variant="contained" type="submit">
+              <Button variant="contained" type="submit" disabled={isLoading}>
                 บันทึก
               </Button>
             </DialogActions>

@@ -88,8 +88,10 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
     balance: number;
   }): number => {
     const { oldAmount, newAmount, oldType, newType, balance } = params;
+    // console.log(params);
+
     if (oldAmount === newAmount && oldType === newType) {
-      return 0;
+      return oldAmount;
     }
 
     const INCOME = 1;
@@ -178,7 +180,7 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
             oldType: transaction.type,
             newType: type,
           });
-          console.log(changed, wallet.balance);
+          // console.log(changed, wallet.balance);
 
           const updateReusult = await dispatch(
             updateTransaction({

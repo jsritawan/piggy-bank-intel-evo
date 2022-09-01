@@ -29,14 +29,17 @@ import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
 import { db, walletRef } from "../../firebase";
 
 const WalletContainer = () => {
-  const { wallets } = useAppSelector((state) => state.walletState);
+  const wallets = useAppSelector((state) => state.walletState.wallets);
   const { uid } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
 
   const [listWallet, setListWallet] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<IWallet | null>(null);
 
-  const handleSelectWallet = (newDefaultId: string, oldDefaultId?: string) => {
+  const handleSelectWallet = async (
+    newDefaultId: string,
+    oldDefaultId?: string
+  ) => {
     const batch = writeBatch(db);
 
     if (oldDefaultId) {
@@ -51,29 +54,22 @@ const WalletContainer = () => {
       updateAt: serverTimestamp(),
     });
 
-    batch.commit().then(() => {
-      getDocs(query(walletRef, where("uid", "==", uid))).then((snapshot) => {
-        const wallets: IWallet[] = snapshot.docs.map((d) => {
-          const { balance, name, createAt, updateAt, isDefault } = d.data();
-          return {
-            id: d.id,
-            uid,
-            balance,
-            name,
-            isDefault: isDefault,
-            createAt: createAt
-              ? (createAt as Timestamp).toDate().toString()
-              : "",
-            updateAt: updateAt
-              ? (updateAt as Timestamp).toDate().toString()
-              : "",
-          };
-        });
-        dispatch(setWallets(wallets));
-      });
-
-      setListWallet(false);
+    await batch.commit();
+    const snapshot = await getDocs(query(walletRef, where("uid", "==", uid)));
+    const wallets: IWallet[] = snapshot.docs.map((d) => {
+      const { balance, name, createAt, updateAt, isDefault } = d.data();
+      return {
+        id: d.id,
+        uid,
+        balance,
+        name,
+        isDefault: isDefault,
+        createAt: createAt ? (createAt as Timestamp).toDate().toString() : "",
+        updateAt: updateAt ? (updateAt as Timestamp).toDate().toString() : "",
+      };
     });
+    dispatch(setWallets(wallets));
+    setListWallet(false);
   };
 
   useEffect(() => {

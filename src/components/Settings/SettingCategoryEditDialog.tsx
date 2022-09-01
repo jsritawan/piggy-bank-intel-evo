@@ -39,6 +39,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
   const { uid } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const [selectedColor, setSelectedColor] = useState<string>(category.color);
+  const [isLoading, setLoading] = useState(false);
 
   const { errors, touched, getFieldProps, handleSubmit, setFieldValue } =
     useFormik({
@@ -52,18 +53,23 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
         name: yup.string().required(),
         type: yup.number().required(),
       }),
-      onSubmit: function ({ color, name, type }) {
-        updateDoc(doc(categoryRef, category.id), {
-          color,
-          name,
-          type,
-          updateAt: serverTimestamp(),
-        }).then(() => {
-          if (uid) {
-            dispatch(fetchCategories(uid));
+      onSubmit: async function ({ color, name, type }) {
+        try {
+          setLoading(true);
+          if (!uid) {
+            return;
           }
+          await updateDoc(doc(categoryRef, category.id), {
+            color,
+            name,
+            type,
+            updateAt: serverTimestamp(),
+          });
+          dispatch(fetchCategories(uid));
           onClose();
-        });
+        } finally {
+          setLoading(false);
+        }
       },
     });
 
@@ -81,7 +87,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
             variant="text"
             color="error"
             onClick={() => openConfirm(true)}
-            disabled={!category.isEditable}
+            disabled={!category.isEditable || isLoading}
           >
             ลบ
           </Button>
@@ -114,7 +120,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
                     setSelectedColor(pc.color);
                     setFieldValue("color", pc.color);
                   }}
-                  disabled={!category.isEditable}
+                  disabled={!category.isEditable || isLoading}
                 >
                   <Box
                     sx={{
@@ -135,7 +141,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
                 select
                 error={touched.type && !!errors.type}
                 helperText={touched.type && errors.type}
-                disabled={!category.isEditable}
+                disabled={!category.isEditable || isLoading}
               >
                 <MenuItem value={1}>รายรับ</MenuItem>
                 <MenuItem value={2}>รายจ่าย</MenuItem>
@@ -148,7 +154,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
                   autoComplete: "off",
                 }}
                 error={touched.name && !!errors.name}
-                disabled={!category.isEditable}
+                disabled={!category.isEditable || isLoading}
               />
             </Stack>
           </Stack>
@@ -158,7 +164,7 @@ const SettingCategoryEditDialog: React.FC<Props> = ({
           <Button
             type="submit"
             variant="contained"
-            disabled={!category.isEditable}
+            disabled={!category.isEditable || isLoading}
           >
             บันทึก
           </Button>

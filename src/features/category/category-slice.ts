@@ -79,6 +79,8 @@ export const fetchCategories = createAsyncThunk(
   }
 );
 
+// export const delele
+
 const initialState: {
   categories: ICategory[];
 } = {

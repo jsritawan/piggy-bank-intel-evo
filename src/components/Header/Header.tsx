@@ -143,11 +143,9 @@ const Header = () => {
             Settings
           </MenuItem>
           <MenuItem
-            onClick={() => {
-              signOut(auth).then(() => {
-                setAnchorEl(null);
-                // navigate("/login");
-              });
+            onClick={async () => {
+              await signOut(auth);
+              setAnchorEl(null);
             }}
           >
             <ListItemIcon>

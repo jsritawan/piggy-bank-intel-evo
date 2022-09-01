@@ -13,7 +13,14 @@ import { useFormik } from "formik";
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import * as yup from "yup";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { categoryRef } from "../../firebase";
 import { grey, red } from "@mui/material/colors";
 import { fetchCategories } from "../../features/category/category-slice";
@@ -41,31 +48,38 @@ const SettingCategoryCreateForm = () => {
         type: yup.number().required(),
       }),
       onSubmit: async ({ name, color, type }, { resetForm }) => {
-        if (categories.length === 50) {
-          return;
-        }
+        try {
+          if (!uid) {
+            return;
+          }
 
-        setDisabled(true);
-        setDoc(doc(categoryRef), {
-          color,
-          name,
-          type,
-          uid,
-          isDeletable: true,
-          isEditable: true,
-          createAt: serverTimestamp(),
-          updateAt: serverTimestamp(),
-        })
-          .then(() => {
-            if (uid) {
-              dispatch(fetchCategories(uid));
-            }
-          })
-          .finally(() => {
-            resetForm();
-            setSelectedColorId(undefined);
-            setDisabled(false);
+          // check items length
+          const snapshot = await getDocs(
+            query(categoryRef, where("uid", "==", uid))
+          );
+          if (snapshot.docs.length >= 50) {
+            return;
+          }
+
+          setDisabled(true);
+          await setDoc(doc(categoryRef), {
+            color,
+            name,
+            type,
+            uid,
+            isDeletable: true,
+            isEditable: true,
+            createAt: serverTimestamp(),
+            updateAt: serverTimestamp(),
           });
+
+          // get new list
+          await dispatch(fetchCategories(uid));
+        } finally {
+          resetForm();
+          setSelectedColorId(undefined);
+          setDisabled(false);
+        }
       },
     });
 
