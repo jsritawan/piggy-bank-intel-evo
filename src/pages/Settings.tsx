@@ -1,6 +1,10 @@
 import { Box, List, ListItemButton, Stack } from "@mui/material";
 import { useState } from "react";
-import { SettingCategory, SettingWallet } from "../components/Settings";
+import {
+  SettingCategory,
+  SettingExportCSV,
+  SettingWallet,
+} from "../components/Settings";
 
 const Settings = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -11,6 +15,8 @@ const Settings = () => {
         return <SettingWallet />;
       case 1:
         return <SettingCategory />;
+      case 2:
+        return <SettingExportCSV />;
       default:
         return null;
     }
@@ -54,6 +60,15 @@ const Settings = () => {
               }}
             >
               ตั้งค่าหมวดหมู่
+            </ListItemButton>
+            <ListItemButton
+              selected={selectedIndex === 2}
+              onClick={() => handleSelectTab(2)}
+              sx={{
+                borderRadius: 1,
+              }}
+            >
+              Export CSV
             </ListItemButton>
           </List>
         </Box>

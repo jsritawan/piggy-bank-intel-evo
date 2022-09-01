@@ -22,6 +22,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import { useAppSelector } from "../../app/hooks";
 import { auth } from "../../firebase";
 
 const Link = forwardRef<
@@ -57,6 +58,7 @@ const Link = forwardRef<
 });
 
 const Header = () => {
+  const photoURL = useAppSelector((state) => state.auth.user.photoURL);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -94,11 +96,6 @@ const Header = () => {
 
         <Stack direction="row" spacing={3} flexGrow={1} ml={2}>
           <Link href="/">Transaction</Link>
-          {/*
-            <Link href="/settings">Settings</Link>
-            <Link href="/dashboard">dashboard</Link>
-            <Link href="/login">login</Link> 
-          */}
         </Stack>
         <Box>
           <IconButton
@@ -113,7 +110,7 @@ const Header = () => {
           >
             <Avatar
               alt="User Image"
-              src="/images/intel evo badge - unlevel.png"
+              src={photoURL ?? "/images/intel evo badge - unlevel.png"}
             />
           </IconButton>
         </Box>
