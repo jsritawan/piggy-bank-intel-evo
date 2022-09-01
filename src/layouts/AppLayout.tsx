@@ -19,7 +19,7 @@ const AppLayout = () => {
   }
 
   return (
-    <Box>
+    <Box pb={4}>
       <Header />
       <Container maxWidth="md" sx={{ mt: "40px" }}>
         <Outlet />

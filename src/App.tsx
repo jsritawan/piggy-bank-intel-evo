@@ -37,7 +37,8 @@ function App() {
         dispatch(setCategories([]));
         dispatch(setWallets([]));
         dispatch(setDefaultWallet(undefined));
-        navigate("/login");
+
+        navigate("/login", { replace: true });
       } else {
         dispatch(
           updateUserAuth({
@@ -50,7 +51,7 @@ function App() {
         );
 
         if (pathname.startsWith("/login")) {
-          navigate("/");
+          navigate("/", { replace: true });
         }
       }
     });
@@ -58,7 +59,7 @@ function App() {
   }, [dispatch, navigate, pathname]);
 
   return (
-    <Box sx={{ bgcolor: grey[100], height: "100vh", pb: 4, overflow: "auto" }}>
+    <Box sx={{ bgcolor: grey[100], height: "100vh", overflow: "auto" }}>
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Transaction />} />

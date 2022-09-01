@@ -29,7 +29,6 @@ import {
   setWallets,
 } from "../../features/wallets/wallets-slice";
 import { walletRef } from "../../firebase";
-import { useMounted } from "../../hooks";
 import AddTransactionContainer from "../AddTransaction/AddTransactionContainer";
 import PeriodContainer from "../Period/PeriodContainer";
 import { WalletContainer } from "../Wallet";
@@ -37,22 +36,20 @@ import TransactionHeader from "./TransactionHeader";
 import TransactionList from "./TransactionList";
 
 const TransactionContainer = () => {
-  const mounted = useMounted();
   const { defaultWallet, wallets } = useAppSelector(
     (state) => state.walletState
   );
-  const { uid, authenticated } = useAppSelector((state) => state.auth.user);
+  const { uid } = useAppSelector((state) => state.auth.user);
   const dispatch = useAppDispatch();
   const [open, setOpen] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState<IWallet>();
-  const [isLoading, setLoading] = useState(true);
   const [date, setDate] = useState<Date | null>(null);
 
   const convertWallet = useCallback(
     (docs: QueryDocumentSnapshot<DocumentData>[]) => {
       let foundDefault: boolean = false;
       const wallets: IWallet[] = docs.map((d) => {
-        const { balance, name, createAt, updateAt, isDefault } = d.data();
+        const { balance, name, createAt, updateAt, isDefault, uid } = d.data();
         foundDefault = Boolean(isDefault);
         return {
           id: d.id,
@@ -69,10 +66,13 @@ const TransactionContainer = () => {
         found: foundDefault,
       };
     },
-    [uid]
+    []
   );
 
   const fetchWallets = useCallback(async () => {
+    if (!uid) {
+      return;
+    }
     const snapshot = await getDocs(query(walletRef, where("uid", "==", uid)));
     const { found, wallets } = convertWallet(snapshot.docs);
 
@@ -93,8 +93,6 @@ const TransactionContainer = () => {
       const { wallets: newWallets } = convertWallet(snapshot.docs);
       dispatch(setWallets(newWallets));
     }
-
-    setLoading(false);
   }, [convertWallet, dispatch, uid]);
 
   useEffect(() => {
@@ -123,15 +121,17 @@ const TransactionContainer = () => {
   }, [wallets, dispatch]);
 
   useEffect(() => {
-    if (authenticated && uid) {
-      dispatch(fetchCategories(uid));
-      fetchWallets();
-    }
-  }, [authenticated, dispatch, fetchWallets, uid]);
+    fetchWallets();
+  }, [fetchWallets]);
 
-  if (mounted.current || isLoading) {
-    return <></>;
-  }
+  useEffect(() => {
+    if (uid) {
+      const promise = dispatch(fetchCategories(uid));
+      return () => {
+        promise.abort();
+      };
+    }
+  }, [dispatch, uid]);
 
   return (
     <Box>

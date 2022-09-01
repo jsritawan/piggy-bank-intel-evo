@@ -1,16 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import {
-  getDocs,
-  orderBy,
-  query,
-  Timestamp,
-  where,
-  writeBatch,
-  doc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { isEmpty } from "lodash";
-import { categoryRef, db, masCatColRef } from "../../firebase";
+import { getDocs, orderBy, query, Timestamp, where } from "firebase/firestore";
+import { categoryRef } from "../../firebase";
 
 export interface ICategory {
   uid: string;
@@ -29,33 +19,6 @@ export const fetchCategories = createAsyncThunk(
   async (uid: string) => {
     const q = query(categoryRef, where("uid", "==", uid), orderBy("name"));
     let snapshot = await getDocs(q);
-
-    if (isEmpty(snapshot.docs)) {
-      try {
-        const masSnapshot = await getDocs(query(masCatColRef, orderBy("name")));
-        const batch = writeBatch(db);
-        masSnapshot.docs.forEach(async (d) => {
-          const data = d.data();
-          const { color, name, type, isDeletable, isEditable } = data;
-          batch.set(doc(categoryRef), {
-            color,
-            name,
-            type,
-            uid,
-            isDeletable: data["isDeletable"] !== undefined ? isDeletable : true,
-            isEditable: data["isEditable"] !== undefined ? isEditable : true,
-            createAt: serverTimestamp(),
-            updateAt: serverTimestamp(),
-          });
-        });
-
-        await batch.commit();
-        snapshot = await getDocs(q);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
     const categories = snapshot.docs.map((doc) => {
       const data = doc.data();
       const { color, name, type, isDeletable, isEditable, createAt, updateAt } =
