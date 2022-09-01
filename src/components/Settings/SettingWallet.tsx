@@ -33,7 +33,7 @@ import {
 import { chunk, cloneDeep } from "lodash";
 import { FormEvent, MouseEvent, useCallback, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { toggleDialog } from "../../features/dialog/dialog-slice";
+import { setDialog } from "../../features/dialog/dialog-slice";
 import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
 import { db, transactionRef, walletRef } from "../../firebase";
 
@@ -181,7 +181,9 @@ const SettingWallet = () => {
         {wallets.length < 6 && (
           <Button
             variant="contained"
-            onClick={() => dispatch(toggleDialog("openCreateWallet"))}
+            onClick={() =>
+              dispatch(setDialog({ name: "openCreateWallet", open: true }))
+            }
           >
             เพิ่มกระเป๋าสตางค์
           </Button>

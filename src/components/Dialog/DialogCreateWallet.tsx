@@ -9,7 +9,7 @@ import {
   Button,
 } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { toggleDialog } from "../../features/dialog/dialog-slice";
+import { setDialog } from "../../features/dialog/dialog-slice";
 import * as yup from "yup";
 import { useFormik } from "formik";
 import { useCallback, useState } from "react";
@@ -90,7 +90,7 @@ const DialogCreateWallet = () => {
           });
           dispatch(setWallets(wallets));
         }
-        dispatch(toggleDialog("openCreateWallet"));
+        dispatch(setDialog({ name: "openCreateWallet", open: false }));
         formikHelpers.resetForm();
       } finally {
         setLoading(false);
@@ -99,7 +99,7 @@ const DialogCreateWallet = () => {
   });
 
   const handleOnClose = useCallback(() => {
-    dispatch(toggleDialog("openCreateWallet"));
+    dispatch(setDialog({ name: "openCreateWallet", open: false }));
     formik.resetForm();
   }, [formik, dispatch]);
 

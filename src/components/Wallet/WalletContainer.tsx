@@ -24,7 +24,7 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { toggleDialog } from "../../features/dialog/dialog-slice";
+import { setDialog } from "../../features/dialog/dialog-slice";
 import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
 import { db, walletRef } from "../../firebase";
 
@@ -114,7 +114,9 @@ const WalletContainer = () => {
         {wallets.length < 6 && (
           <Button
             variant="contained"
-            onClick={() => dispatch(toggleDialog("openCreateWallet"))}
+            onClick={() =>
+              dispatch(setDialog({ name: "openCreateWallet", open: true }))
+            }
           >
             เพิ่มกระเป๋าสตางค์
           </Button>

@@ -21,7 +21,7 @@ import {
 import { useState, useEffect, useCallback } from "react";
 import { useAppSelector, useAppDispatch } from "../../app/hooks";
 import { fetchCategories } from "../../features/category/category-slice";
-import { toggleDialog } from "../../features/dialog/dialog-slice";
+import { setDialog } from "../../features/dialog/dialog-slice";
 import { fetchTransaction } from "../../features/transactions/transactions-slice";
 import {
   IWallet,
@@ -115,12 +115,6 @@ const TransactionContainer = () => {
   }, [wallets]);
 
   useEffect(() => {
-    if (wallets.length === 0) {
-      dispatch(toggleDialog("openCreateWallet"));
-    }
-  }, [wallets, dispatch]);
-
-  useEffect(() => {
     fetchWallets();
   }, [fetchWallets]);
 
@@ -147,7 +141,9 @@ const TransactionContainer = () => {
             <Box textAlign={"center"}>
               <Button
                 variant="contained"
-                onClick={() => dispatch(toggleDialog("openCreateWallet"))}
+                onClick={() =>
+                  dispatch(setDialog({ name: "openCreateWallet", open: true }))
+                }
               >
                 เพิ่มกระเป๋าสตางค์
               </Button>

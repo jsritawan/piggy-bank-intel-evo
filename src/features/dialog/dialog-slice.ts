@@ -10,11 +10,15 @@ const dialogSlice = createSlice({
   name: "dialog",
   initialState,
   reducers: {
-    toggleDialog: function (state, action: PayloadAction<keyof IDialog>) {
-      state[action.payload] = !state[action.payload];
+    setDialog: function (
+      state,
+      action: PayloadAction<{ name: keyof IDialog; open: boolean }>
+    ) {
+      const { name, open } = action.payload;
+      state[name] = open;
     },
   },
 });
 
-export const { toggleDialog } = dialogSlice.actions;
+export const { setDialog } = dialogSlice.actions;
 export default dialogSlice.reducer;
