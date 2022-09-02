@@ -39,6 +39,7 @@ const SettingExportCSV = () => {
     []
   );
   const [walletId, setWalletId] = useState<string>("");
+  const [walletName, setWalletName] = useState<string>("");
   const [selectDate, setSelectDate] = useState(format(new Date(), "yyyy/M"));
   const [isLoading, setLoading] = useState(false);
   const categoryMapRef = useRef<Map<string, string>>(new Map());
@@ -52,11 +53,13 @@ const SettingExportCSV = () => {
   };
 
   const handleWalletChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    if (isEmpty(value)) {
+    const id = event.target.value;
+    if (isEmpty(id)) {
       return;
     }
-    setWalletId(value);
+    const wallet = wallets.find((w) => w.id === id);
+    setWalletName(wallet?.name ?? "");
+    setWalletId(id);
   };
 
   const fetchData = async (event: MouseEvent<HTMLButtonElement>) => {
@@ -113,9 +116,13 @@ const SettingExportCSV = () => {
       link.setAttribute("href", "data:text/csv;charset=utf-8," + encodedUri);
       link.setAttribute(
         "download",
-        `รายรับรายจ่ายเดือน${format(new Date(selectDate), "MMMMyyyy", {
-          locale: th,
-        })}.csv`
+        `รายรับรายจ่าย${walletName}เดือน${format(
+          new Date(selectDate),
+          "MMMMyyyy",
+          {
+            locale: th,
+          }
+        )}.csv`
       );
       document.body.appendChild(link); // Required for FF
       link.click();
