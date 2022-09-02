@@ -24,6 +24,7 @@ import {
 } from "firebase/firestore";
 import { db, walletRef } from "../../firebase";
 import { IWallet, setWallets } from "../../features/wallets/wallets-slice";
+import NumberFormat from "react-number-format";
 
 const validationSchema = yup.object().shape({
   name: yup.string().max(100).required(),
@@ -128,22 +129,23 @@ const DialogCreateWallet = () => {
                 />
 
                 <Typography component="label">จำนวนเงิน</Typography>
-                <TextField
+                <NumberFormat
                   {...formik.getFieldProps("balance")}
+                  onChange={undefined}
                   placeholder="จำนวนเงิน"
+                  customInput={TextField}
+                  decimalScale={2}
+                  onValueChange={({ floatValue }) => {
+                    formik.setFieldValue("balance", floatValue);
+                  }}
                   error={
                     formik.touched["balance"] && !!formik.errors["balance"]
                   }
                   helperText={
                     formik.touched["balance"] && formik.errors["balance"]
                   }
-                  onBlur={() =>
-                    formik.setFieldValue(
-                      "balance",
-                      Number(formik.values.balance || "0").toFixed(2)
-                    )
-                  }
                   disabled={isLoading}
+                  fullWidth
                 />
               </Stack>
             </DialogContent>

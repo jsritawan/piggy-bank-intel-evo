@@ -50,7 +50,9 @@ const TransactionContainer = () => {
       let foundDefault: boolean = false;
       const wallets: IWallet[] = docs.map((d) => {
         const { balance, name, createAt, updateAt, isDefault, uid } = d.data();
-        foundDefault = Boolean(isDefault);
+        if (!foundDefault) {
+          foundDefault = Boolean(isDefault);
+        }
         return {
           id: d.id,
           uid,
@@ -105,6 +107,12 @@ const TransactionContainer = () => {
       };
     }
   }, [date, defaultWallet?.id, dispatch, uid]);
+
+  useEffect(() => {
+    if (defaultWallet?.id) {
+      setDate(new Date());
+    }
+  }, [defaultWallet?.id]);
 
   useEffect(() => {
     setDate(new Date());

@@ -22,8 +22,11 @@ import {
   limit,
 } from "firebase/firestore";
 import { isEmpty } from "lodash";
+import { fetchCategories } from "../features/category/category-slice";
+import { useAppDispatch } from "../app/hooks";
 
 const Login = () => {
+  const dispatch = useAppDispatch();
   const [isLoading, setLoading] = useState(false);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -58,6 +61,7 @@ const Login = () => {
       });
 
       await batch.commit();
+      await dispatch(fetchCategories(user.uid));
     } catch (error) {
       if (error instanceof FirebaseError) {
         setErrorMessage(error.message);
@@ -69,7 +73,7 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   const handleOnSnackbarClose = () => {
     setOpenSnackbar(false);
