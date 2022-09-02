@@ -34,6 +34,7 @@ import {
 } from "../../features/transactions/transactions-slice";
 import { isEmpty } from "lodash";
 import { updateWalletBalance } from "../../features/wallets/wallets-slice";
+import NumberFormat from "react-number-format";
 
 const validationSchema = yup.object().shape({
   categoryId: yup.string().required("กรุณาเลือกหมวดหมู่"),
@@ -76,10 +77,6 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
     [categories, txnType]
   );
 
-  const roundAmount = useCallback((num: number) => {
-    return Number((Math.round(num * 100) / 100).toFixed(2));
-  }, []);
-
   const calculateChange = (params: {
     oldType: number;
     newType: number;
@@ -88,18 +85,16 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
     balance: number;
   }): number => {
     const { oldAmount, newAmount, oldType, newType, balance } = params;
-    // console.log(params);
 
     if (oldAmount === newAmount && oldType === newType) {
-      return oldAmount;
+      return balance;
     }
 
     const INCOME = 1;
     const EXPENSE = 2;
+
     // same type
     if (newType === oldType) {
-      // console.log({ balance, oldAmount, newAmount });
-
       if (newType === INCOME) {
         return balance - oldAmount + newAmount;
       }
@@ -139,7 +134,6 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
   const {
     errors,
     touched,
-    values,
     getFieldProps,
     handleSubmit,
     setFieldValue,
@@ -155,12 +149,15 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
 
         setLoading(true);
 
-        const { type, amount } = values;
         let changed = 0;
-
+        const { type, amount } = values;
         if (isEmpty(transaction)) {
           const createResult = await dispatch(
-            createTransaction({ ...values, uid, wallet })
+            createTransaction({
+              ...values,
+              uid,
+              wallet,
+            })
           );
 
           if (!createTransaction.fulfilled.match(createResult)) {
@@ -180,7 +177,6 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
             oldType: transaction.type,
             newType: type,
           });
-          // console.log(changed, wallet.balance);
 
           const updateReusult = await dispatch(
             updateTransaction({
@@ -195,9 +191,11 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
             return;
           }
         }
-        dispatch(updateWalletBalance(changed));
 
+        dispatch(updateWalletBalance(changed));
         await dispatch(fetchTransaction({ date, walletId: wallet.id, uid }));
+
+        console.log({ values, changed });
 
         if (!preventOnClose) {
           setOpen(false);
@@ -348,13 +346,16 @@ const AddTransactionContainer: FunctionComponent<IProps> = ({
             <Typography variant="body1" sx={{ mb: 1 }}>
               จำนวนเงิน
             </Typography>
-            <TextField
+            <NumberFormat
               {...getFieldProps("amount")}
+              customInput={TextField}
+              decimalScale={2}
+              onChange={undefined}
+              onValueChange={({ floatValue }) => {
+                setFieldValue("amount", floatValue);
+              }}
               error={touched["amount"] && !!errors["amount"]}
               helperText={touched["amount"] && errors["amount"]}
-              onBlur={() =>
-                setFieldValue("amount", roundAmount(values.amount || 0))
-              }
               disabled={disabled && isLoading}
               fullWidth
             />
