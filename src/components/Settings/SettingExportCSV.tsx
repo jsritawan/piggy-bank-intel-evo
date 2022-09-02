@@ -70,7 +70,8 @@ const SettingExportCSV = () => {
 
       setLoading(true);
 
-      const date = new Date(selectDate);
+      const [year, month] = selectDate.split("/").map(Number);
+      const date = new Date(year, month - 1);
       const startDate = startOfMonth(date);
       const endDate = endOfMonth(date);
 
@@ -116,13 +117,9 @@ const SettingExportCSV = () => {
       link.setAttribute("href", "data:text/csv;charset=utf-8," + encodedUri);
       link.setAttribute(
         "download",
-        `รายรับรายจ่าย${walletName}เดือน${format(
-          new Date(selectDate),
-          "MMMMyyyy",
-          {
-            locale: th,
-          }
-        )}.csv`
+        `รายรับรายจ่าย${walletName}เดือน${format(date, "MMMMyyyy", {
+          locale: th,
+        })}.csv`
       );
       document.body.appendChild(link); // Required for FF
       link.click();
